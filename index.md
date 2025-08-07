@@ -4,8 +4,8 @@
 Freshman Engineering student at ASU passionate about IoT, automation, and embedded systems.
 
 ## 💼 Projects
+- [Notion Portfolio](https://frill-heliotrope-6c8.notion.site/George-Shenoda-IoT-Engineering-Portfolio-248cf8332f2180808959cf343fcdab10?source=copy_link)
 - **KNX Lighting Control** – Smart lighting project using KNX and ETS6.
-- **Arduino Sensor System** – (Coming soon)
 
 ## 📜 Certifications
 - [IoT Mahara Certificate](https://drive.proton.me/urls/D3FHJSFFP0#NnmstJL5s79h)
