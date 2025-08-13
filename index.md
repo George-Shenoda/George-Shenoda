@@ -10,6 +10,7 @@ Freshman Engineering student at ASU passionate about IoT, automation, and embedd
 ## 📜 Certifications
 - [IoT Mahara Certificate](https://drive.proton.me/urls/D3FHJSFFP0#NnmstJL5s79h)
 - [Hardware essentials Mahara Certificate](https://drive.proton.me/urls/PXPEH6EYYC#wWfD1RuYOszy)
+- [C programming Mahara Certificate](https://drive.proton.me/urls/A5KRANC7QC#HWKbyV9wbLZq)
 
 ## 📄 Download My CV
 [Download CV (PDF)](https://drive.proton.me/urls/ZFCYT8BYKR#XzAsSxgJoaO1)
