@@ -25,6 +25,12 @@
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "42ec7916-5aab-4e1d-b1d1-dc7284c57bb2"
+      }
+    },
+    "owner": "georgeshenoda"
   }
 }
