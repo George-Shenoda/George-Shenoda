@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native';
+import { Linking, Pressable, Text, View } from 'react-native';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -6,6 +6,7 @@ import {
   JetBrainsMono_400Regular,
 } from '@expo-google-fonts/jetbrains-mono';
 import Reveal from './Reveal';
+import { SITE_URL } from '../config';
 import type { Palette } from '../theme';
 
 const capabilities = [
@@ -85,6 +86,33 @@ function Hero({ palette }: { palette: Palette }) {
         >
           {capabilities.join('  /  ')}
         </Text>
+      </Reveal>
+      <Reveal delay={500}>
+        <Pressable
+          onPress={() => {
+            Linking.openURL(`${SITE_URL}/assets/resume.pdf`).catch(() => {});
+          }}
+          style={({ pressed }) => ({
+            marginTop: 24,
+            alignSelf: 'center',
+            borderWidth: 1,
+            borderColor: palette.primary,
+            borderRadius: 12,
+            paddingVertical: 12,
+            paddingHorizontal: 28,
+            opacity: pressed ? 0.75 : 1,
+          })}
+        >
+          <Text
+            style={{
+              color: palette.primary,
+              fontWeight: '600',
+              fontSize: 15,
+            }}
+          >
+            Download CV
+          </Text>
+        </Pressable>
       </Reveal>
     </View>
   );
