@@ -26,7 +26,7 @@ function TitleBar() {
         }}
       />
       <div
-        className="fixed top-0 left-0 z-50 flex items-center px-4 bg-[#151d1d] text-white/90 select-none"
+        className="fixed top-0 left-0 z-50 flex items-center px-4 dark:bg-[#151d1d] bg-[#eee] dark:text-white/90 text-black/90 select-none"
         style={{
           height: `env(titlebar-area-height, ${OVERLAY_FALLBACK_HEIGHT}px)`,
           width: `env(titlebar-area-width, 100%)`,

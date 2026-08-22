@@ -2,7 +2,7 @@
 
 > Status: IN PROGRESS — planning finalized 2026-08-22. Execute steps in order.
 > Stack: Next.js 16.3 (App Router), React 19, Tailwind 4, tw-animate-css, nodemailer server action.
-> Next session prompt: "read plan.md and start Step 4".
+> Next session prompt: "read plan.md and start Step 5".
 
 ## Goal
 
@@ -105,17 +105,18 @@ all apps startup: try remote → fallback to bundled snapshot (offline-safe)
 - [x] Local Windows installer smoke test from `release/`: NSIS `George Shenoda Setup 0.1.0.exe` + portable both built; portable exe launched → embedded server 200 → correct page title
 - Local Windows build notes (CI unaffected): run electron-builder from REPO ROOT (`npm run desktop:dist`) — running it inside apps/desktop triggers its internal npm install against hoisted node_modules and prunes devDeps. If global `.npmrc` sets npm≥11 `allow-scripts`, prefix local dist runs with `$env:NPM_CONFIG_USERCONFIG="<empty file>"`. First-run winCodeSign cache extraction fails on symlink privilege — seed `%LOCALAPPDATA%\electron-builder\Cache\winCodeSign\winCodeSign-2.6.0` manually ignoring the two darwin dylib errors
 
-## Step 4 — React Native app (apps/mobile)
+## Step 4 — React Native app (apps/mobile) ✅ DONE 2026-08-22
 
-- [ ] Expo app (SDK latest) + expo-router or single-scroll screen mirroring site order
-- [ ] Imports `@portfolio/shared` (projects, theme tokens, submitContact)
-- [ ] Hero: gradient headline (expo-linear-gradient mask), JetBrains Mono capabilities line, entrance stagger via Reanimated matching web Reveal vocabulary (700ms ease-out slide-up)
-- [ ] Workflow cards → horizontal snap carousel (native idiom replacing 4-col grid)
-- [ ] Business section parity
-- [ ] Projects: FlatList, same 6-at-a-time Load More over shared data, images from `${NEXT_PUBLIC_SITE_URL}`, remote-first data like web
-- [ ] Contact form → `submitContact(NEXT_PUBLIC_SITE_URL, …)`; offline inline error
-- [ ] Dark/light follows OS theme (same palette both modes)
-- [ ] `eas.json` profiles: development / preview (APK sideload) / production (AAB + IPA)
+- [x] Expo app (SDK 57) — single-scroll screen mirroring site order *(chose plain entry over expo-router, allowed by this line)*
+- [x] Imports `@portfolio/shared` (projects, theme tokens, submitContact) — metro.config.js wires workspace resolution
+- [x] Hero: gradient headline (MaskedView + expo-linear-gradient mask), JetBrains Mono capabilities line (@expo-google-fonts), entrance stagger via Reanimated (FadeInDown, 700ms ease-out cubic = web Reveal vocabulary)
+- [x] Workflow cards → horizontal snap carousel (FlatList snapToInterval, native idiom replacing 4-col grid)
+- [x] Business section parity
+- [x] Projects: FlatList scroll-disabled inside screen scroll, same 6-at-a-time Load More over shared data, images via `${EXPO_PUBLIC_SITE_URL}` resolver, remote-first fetch with bundled fallback like web
+- [x] Contact form → `submitContact(SITE_URL, …)` from shared; offline/network errors surface inline
+- [x] Dark/light follows OS theme (`useColorScheme`, same palette tokens both modes)
+- [x] `eas.json` profiles: development / preview (APK sideload) / production (AAB + IPA)
+- Gate: `tsc --noEmit` clean + `expo export --platform android` produces Hermes bundle. Env note: mobile uses `EXPO_PUBLIC_SITE_URL` (Expo's native env prefix) instead of `NEXT_PUBLIC_SITE_URL`; set it at EAS build time
 
 ## Step 5 — Store listings prep (both stores)
 
