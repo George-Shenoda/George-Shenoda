@@ -2,14 +2,20 @@ import { theme } from '@portfolio/shared';
 
 const { primary, secondary, tertiary, surfaceLight } = theme.colors;
 
+/**
+ * Mirrors apps/web/app/globals.css CSS variables exactly
+ * (oklch values converted to hex; bands use the explicit
+ * #151d1d / #eee overrides the web navbar/footer hardcode).
+ */
 export const palette = {
   dark: {
-    background: theme.colors.surfaceDark1,
-    section: theme.colors.surfaceDark2,
-    card: theme.colors.surfaceDark3,
-    text: '#e6e6e6',
-    mutedText: 'rgba(230, 230, 230, 0.6)',
-    border: 'rgba(255, 255, 255, 0.1)',
+    background: '#0a0a0a',
+    section: '#262626',
+    card: '#171717',
+    band: '#151d1d',
+    text: '#fafafa',
+    mutedText: '#a1a1a1',
+    border: 'rgba(255, 255, 255, 0.10)',
     primary,
     secondary,
     tertiary,
@@ -17,11 +23,12 @@ export const palette = {
   },
   light: {
     background: '#ffffff',
-    section: surfaceLight,
+    section: '#f8fafc',
     card: '#ffffff',
-    text: '#111111',
-    mutedText: 'rgba(17, 17, 17, 0.6)',
-    border: 'rgba(0, 0, 0, 0.08)',
+    band: surfaceLight,
+    text: '#0a0a0a',
+    mutedText: '#737373',
+    border: '#e5e5e5',
     primary,
     secondary,
     tertiary,

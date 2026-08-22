@@ -1,4 +1,4 @@
-import { Linking, Pressable, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -6,6 +6,7 @@ import {
   JetBrainsMono_400Regular,
 } from '@expo-google-fonts/jetbrains-mono';
 import Reveal from './Reveal';
+import type { Section } from './Navbar';
 import { SITE_URL } from '../config';
 import type { Palette } from '../theme';
 
@@ -16,7 +17,13 @@ const capabilities = [
   'Business Automation',
 ];
 
-function Hero({ palette }: { palette: Palette }) {
+function Hero({
+  palette,
+  onNavigate,
+}: {
+  palette: Palette;
+  onNavigate: (section: Section) => void;
+}) {
   const [fontsLoaded] = useFonts({ JetBrainsMono_400Regular });
 
   return (
@@ -88,34 +95,63 @@ function Hero({ palette }: { palette: Palette }) {
         </Text>
       </Reveal>
       <Reveal delay={500}>
-        <Pressable
-          onPress={() => {
-            Linking.openURL(`${SITE_URL}/assets/resume.pdf`).catch(() => {});
-          }}
-          style={({ pressed }) => ({
-            marginTop: 24,
-            alignSelf: 'center',
-            borderWidth: 1,
-            borderColor: palette.primary,
-            borderRadius: 12,
-            paddingVertical: 12,
-            paddingHorizontal: 28,
-            opacity: pressed ? 0.75 : 1,
-          })}
-        >
-          <Text
-            style={{
-              color: palette.primary,
-              fontWeight: '600',
-              fontSize: 15,
-            }}
+        <View style={styles.buttonRow}>
+          <Pressable
+            onPress={() => onNavigate('projects')}
+            style={({ pressed }) => ({
+              borderRadius: 12,
+              overflow: 'hidden',
+              opacity: pressed ? 0.85 : 1,
+            })}
           >
-            Download CV
-          </Text>
-        </Pressable>
+            <LinearGradient
+              colors={[palette.primary, palette.secondary] as unknown as [string, string, ...string[]]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ paddingVertical: 12, paddingHorizontal: 22 }}
+            >
+              <Text style={{ color: '#ffffff', fontWeight: '600', fontSize: 15 }}>
+                View My Work
+              </Text>
+            </LinearGradient>
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              Linking.openURL(`${SITE_URL}/assets/resume.pdf`).catch(() => {});
+            }}
+            style={({ pressed }) => ({
+              borderWidth: 1,
+              borderColor: palette.primary,
+              borderRadius: 12,
+              paddingVertical: 12,
+              paddingHorizontal: 22,
+              opacity: pressed ? 0.75 : 1,
+            })}
+          >
+            <Text
+              style={{
+                color: palette.primary,
+                fontWeight: '600',
+                fontSize: 15,
+              }}
+            >
+              Download CV
+            </Text>
+          </Pressable>
+        </View>
       </Reveal>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  buttonRow: {
+    marginTop: 24,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+  },
+});
 
 export default Hero;
