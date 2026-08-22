@@ -15,9 +15,14 @@
     "start": "npm run start -w @portfolio/web",
     "lint": "npm run lint -w @portfolio/web",
     "typecheck": "npm run typecheck -w @portfolio/web",
+    "icons": "node scripts/make-icons.mjs",
     "desktop:dev": "npm run dev -w @portfolio/desktop",
     "desktop:build": "cross-env ELECTRON_BUILD=true npm run build -w @portfolio/web && npm run assemble -w @portfolio/desktop",
     "desktop:dist": "npm run desktop:build && electron-builder"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "png-to-ico": "^3.0.2",
+    "pngjs": "^7.0.0"
+  }
 }

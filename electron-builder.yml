@@ -9,6 +9,7 @@ extraResources:
   - from: apps/web/.next/standalone
     to: standalone
 win:
+  icon: assets/icons/icon.ico
   target:
     - nsis
     - portable
@@ -16,10 +17,12 @@ nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
 mac:
+  icon: assets/icons/icon.png
   target:
     - dmg
     - zip
 linux:
+  icon: assets/icons/icon.png
   target:
     - AppImage
     - deb
