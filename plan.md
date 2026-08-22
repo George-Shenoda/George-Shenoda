@@ -134,11 +134,22 @@ all apps startup: try remote → fallback to bundled snapshot (offline-safe)
 - [x] JSON-LD `Person` schema injected on home page
 - Verified: robots.txt/sitemap.xml prerendered at build; og:title + ld+json present in served HTML. URLs fall back to localhost until `NEXT_PUBLIC_SITE_URL` is set with the final domain
 
+## Step 7 — Code signing + brand icons ✅ DONE 2026-08-23
+
+- [x] Brand mark: `assets/brand/icon.svg` — dark `#0d1515` bg + teal→cyan gradient "GS"; generator `scripts/make-icons.mjs` (`npm run icons`) renders all targets via @resvg/resvg-js
+- [x] Web: `apps/web/app/favicon.ico` (16/32/48), `icon.png`, `apple-icon.png`
+- [x] Desktop: `assets/icons/icon.ico` (16–256) + 1024px png, wired into `electron-builder.yml`
+- [x] Mobile: icon, adaptive fg/bg/monochrome, splash-icon, favicon regenerated with GS
+- [x] Windows Authenticode signing: self-signed cert → `certs/*.pfx` (git-ignored), signed local installers verified via Get-AuthenticodeSignature; untrusted-root status documented
+- [x] CI signing env passthrough (WIN_CSC_*, CSC_*, Apple notarization vars) in electron-release.yml; empty = unsigned fallback
+- [x] Mobile signing via EAS remote credentials flow documented (Android auto-keystore, iOS needs Apple Developer account)
+- [x] Signing docs rewritten in ELECTRON.md (local build commands, cert renewal, CA/EV upgrade path, secrets table)
+
 ---
 
 ## Known tradeoffs (accepted)
 
-- Unsigned binaries → SmartScreen/Gatekeeper warnings until code signing exists (documented, not blocking)
+- Self-signed Windows signing → signature present but untrusted-root until a CA/EV cert or Azure Trusted Signing replaces the PFX (upgrade path in ELECTRON.md)
 - App footprint ≈200 MB (ships Node runtime + standalone server)
 - macOS desktop builds only on macOS runners (hence CI matrix), not locally from Windows
 - Workspaces touch every future pipeline path (Vercel root-dir, GH Actions working-directory) — accepted for cleaner long-term structure

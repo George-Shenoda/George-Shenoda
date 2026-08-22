@@ -51,3 +51,8 @@ eas-json-schema.json
 
 # security scan artifacts
 strix_runs/
+
+# code signing material (never commit)
+certs/
+*.pfx
+*.p12
