@@ -2,7 +2,7 @@
 
 > Status: IN PROGRESS — planning finalized 2026-08-22. Execute steps in order.
 > Stack: Next.js 16.3 (App Router), React 19, Tailwind 4, tw-animate-css, nodemailer server action.
-> Next session prompt: "read plan.md and start Step 1".
+> Next session prompt: "read plan.md and start Step 2".
 
 ## Goal
 
@@ -73,13 +73,13 @@ all apps startup: try remote → fallback to bundled snapshot (offline-safe)
 - [x] `.gitignore`: add `release/`, `apps/mobile/.expo`, EAS artifacts
 - [x] GATE: lint + tsc + build green from new layout; deployed site identical *(local gate green; deploy parity pending the Vercel setting above)*
 
-## Step 1 — Web-safe foundations (verify with plain `npm run dev` inside apps/web)
+## Step 1 — Web-safe foundations (verify with plain `npm run dev` inside apps/web) ✅ DONE 2026-08-22
 
-- [ ] `app/api/contact/route.ts`: POST endpoint wrapping existing `sendContactEmail` logic as JSON; extract mailer to shared lib; keep server action working for web
-- [ ] `Contact.tsx`: dual-path submit — web keeps server action; inside Electron POSTs to `${NEXT_PUBLIC_SITE_URL}/api/contact` via `submitContact()` from shared; graceful inline error if unreachable
-- [ ] `components/desktop/TitleBar.tsx`: draggable bar (`-webkit-app-region: drag`), brand left; renders ONLY when `window.electronAPI?.isDesktop === true`; content padding uses `env(titlebar-area-*)`
-- [ ] `app/layout.tsx`: mount `<TitleBar/>` above Navbar; metadata title `"Create Next App"` → `"George Shenoda | Full-Stack Developer"` + real description
-- [ ] Document `NEXT_PUBLIC_SITE_URL` env (used by desktop contact fallback, mobile contact, future SEO metadataBase)
+- [x] `app/api/contact/route.ts`: POST endpoint wrapping existing `sendContactEmail` logic as JSON; extract mailer to shared lib (`apps/web/lib/mailer.ts`); keep server action working for web
+- [x] `Contact.tsx`: dual-path submit — web keeps server action; inside Electron POSTs to `${NEXT_PUBLIC_SITE_URL}/api/contact` via `submitContact()` from shared; graceful inline error if unreachable
+- [x] `components/desktop/TitleBar.tsx`: draggable bar (`-webkit-app-region: drag`), brand left; renders ONLY when `window.electronAPI?.isDesktop === true`; content padding uses `env(titlebar-area-*)`
+- [x] `app/layout.tsx`: mount `<TitleBar/>` above Navbar; metadata title `"Create Next App"` → `"George Shenoda | Full-Stack Developer"` + real description
+- [x] Document `NEXT_PUBLIC_SITE_URL` env (used by desktop contact fallback, mobile contact, future SEO metadataBase) → `.env.example`
 
 ## Step 2 — Electron shell (apps/desktop)
 

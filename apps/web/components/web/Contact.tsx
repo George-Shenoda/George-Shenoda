@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button } from '../ui/button';
 import { sendContactEmail } from '@/app/actions/contact';
+import { submitContact } from '@portfolio/shared';
 import { CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import Reveal from './Reveal';
 
@@ -32,7 +33,14 @@ export default function Contact() {
     setErrorMessage('');
 
     try {
-      const result = await sendContactEmail(formData);
+      const result =
+        window.electronAPI?.isDesktop === true
+          ? // Desktop app: no server runtime here — route through the deployed site.
+            await submitContact(
+              process.env.NEXT_PUBLIC_SITE_URL ?? 'https://localhost:3000',
+              formData
+            )
+          : await sendContactEmail(formData);
 
       if (result.success) {
         setStatus('success');
