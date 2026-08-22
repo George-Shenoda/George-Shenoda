@@ -1,12 +1,12 @@
 appId: com.georgeshenoda.portfolio
 productName: George Shenoda
 directories:
-  output: release
+  output: apps/desktop/release
 files:
-  - electron/**/*
-  - package.json
+  - apps/desktop/electron/**/*
+  - apps/desktop/package.json
 extraResources:
-  - from: ../web/.next/standalone
+  - from: apps/web/.next/standalone
     to: standalone
 win:
   target:
@@ -24,3 +24,4 @@ linux:
     - AppImage
     - deb
   category: Development
+npmRebuild: false

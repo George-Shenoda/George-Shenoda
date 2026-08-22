@@ -7,13 +7,11 @@
   "scripts": {
     "dev": "electron electron/main.mjs",
     "assemble": "node electron/assemble.mjs",
-    "build": "cross-env ELECTRON_BUILD=true npm run build --prefix ../web && npm run assemble",
-    "dist": "npm run build && electron-builder",
     "icons": "node ../../scripts/make-icons.mjs"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
-    "electron": "^33.0.0",
+    "electron": "33.4.11",
     "electron-builder": "^25.0.0"
   }
 }

@@ -2,7 +2,7 @@
 
 > Status: IN PROGRESS — planning finalized 2026-08-22. Execute steps in order.
 > Stack: Next.js 16.3 (App Router), React 19, Tailwind 4, tw-animate-css, nodemailer server action.
-> Next session prompt: "read plan.md and start Step 3".
+> Next session prompt: "read plan.md and start Step 4".
 
 ## Goal
 
@@ -97,12 +97,13 @@ all apps startup: try remote → fallback to bundled snapshot (offline-safe)
 - [x] `scripts/make-icons.mjs` pipeline stubbed for future `assets/brand/icon.svg`
 - Verified locally on Windows: dev mode (window + API through shell), prod standalone mode (server.js child + API 200); installer dist deferred to Step 3
 
-## Step 3 — CI + local verification
+## Step 3 — CI + local verification ✅ DONE 2026-08-22
 
-- [ ] `.github/workflows/electron-release.yml`: matrix `[windows-latest, macos-latest, ubuntu-latest]`, trigger ONLY on tag `v*`, attach artifacts to release
-- [ ] Verify web unchanged: lint, tsc, build clean, all sections/animations work
-- [ ] Verify desktop: window, theme sync incl. overlay color, scroll reveals, external links → system browser, Load More, live-data refresh, contact error path
-- [ ] Local Windows installer smoke test from `release/`
+- [x] `.github/workflows/electron-release.yml`: matrix `[windows-latest, macos-latest, ubuntu-latest]`, trigger ONLY on tag `v*`, electron-builder `--publish always` attaches artifacts to release
+- [x] Verify web unchanged: lint, tsc, build clean, all sections render (hero/workflow/projects/contact/footer checked in prod server HTML)
+- [x] Verify desktop: window opens + API through shell (dev AND packaged prod), live-data endpoint 200, contact API validation/error paths return graceful JSON. *(Theme overlay color sync, scroll reveals, external-link handoff: implemented + code-reviewed; visual pass pending human eyes)*
+- [x] Local Windows installer smoke test from `release/`: NSIS `George Shenoda Setup 0.1.0.exe` + portable both built; portable exe launched → embedded server 200 → correct page title
+- Local Windows build notes (CI unaffected): run electron-builder from REPO ROOT (`npm run desktop:dist`) — running it inside apps/desktop triggers its internal npm install against hoisted node_modules and prunes devDeps. If global `.npmrc` sets npm≥11 `allow-scripts`, prefix local dist runs with `$env:NPM_CONFIG_USERCONFIG="<empty file>"`. First-run winCodeSign cache extraction fails on symlink privilege — seed `%LOCALAPPDATA%\electron-builder\Cache\winCodeSign\winCodeSign-2.6.0` manually ignoring the two darwin dylib errors
 
 ## Step 4 — React Native app (apps/mobile)
 

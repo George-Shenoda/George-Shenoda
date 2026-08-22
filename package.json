@@ -2,6 +2,9 @@
   "name": "my_portfolio",
   "version": "0.1.0",
   "private": true,
+  "description": "George Shenoda portfolio — website, desktop and mobile apps",
+  "author": "George Shenoda <general@email.com>",
+  "main": "apps/desktop/electron/main.mjs",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -13,11 +16,8 @@
     "lint": "npm run lint -w @portfolio/web",
     "typecheck": "npm run typecheck -w @portfolio/web",
     "desktop:dev": "npm run dev -w @portfolio/desktop",
-    "desktop:build": "npm run build -w @portfolio/desktop",
-    "desktop:dist": "npm run dist -w @portfolio/desktop"
+    "desktop:build": "cross-env ELECTRON_BUILD=true npm run build -w @portfolio/web && npm run assemble -w @portfolio/desktop",
+    "desktop:dist": "npm run desktop:build && electron-builder"
   },
-  "devDependencies": {},
-  "allowScripts": {
-    "electron@33.4.11": true
-  }
+  "devDependencies": {}
 }
