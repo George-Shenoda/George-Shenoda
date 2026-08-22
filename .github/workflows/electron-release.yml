@@ -33,18 +33,27 @@ jobs:
       - name: Assemble standalone bundle
         run: npm run assemble -w @portfolio/desktop
 
+      - name: Configure code signing
+        # electron-builder treats an EMPTY-STRING CSC_LINK as a path on macOS ("not a file"),
+        # so vars are exported only when the corresponding repo secret actually exists.
+        env:
+          WIN_CSC_LINK_SECRET: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD_SECRET: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          CSC_LINK_SECRET: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD_SECRET: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID_SECRET: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD_SECRET: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID_SECRET: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -n "$WIN_CSC_LINK_SECRET" ]; then echo "WIN_CSC_LINK=$WIN_CSC_LINK_SECRET" >> "$GITHUB_ENV"; fi
+          if [ -n "$WIN_CSC_KEY_PASSWORD_SECRET" ]; then echo "WIN_CSC_KEY_PASSWORD=$WIN_CSC_KEY_PASSWORD_SECRET" >> "$GITHUB_ENV"; fi
+          if [ -n "$CSC_LINK_SECRET" ]; then echo "CSC_LINK=$CSC_LINK_SECRET" >> "$GITHUB_ENV"; fi
+          if [ -n "$CSC_KEY_PASSWORD_SECRET" ]; then echo "CSC_KEY_PASSWORD=$CSC_KEY_PASSWORD_SECRET" >> "$GITHUB_ENV"; fi
+          if [ -n "$APPLE_ID_SECRET" ]; then echo "APPLE_ID=$APPLE_ID_SECRET" >> "$GITHUB_ENV"; fi
+          if [ -n "$APPLE_APP_SPECIFIC_PASSWORD_SECRET" ]; then echo "APPLE_APP_SPECIFIC_PASSWORD=$APPLE_APP_SPECIFIC_PASSWORD_SECRET" >> "$GITHUB_ENV"; fi
+          if [ -n "$APPLE_TEAM_ID_SECRET" ]; then echo "APPLE_TEAM_ID=$APPLE_TEAM_ID_SECRET" >> "$GITHUB_ENV"; fi
+
       - name: Package and publish installers
         run: npx electron-builder --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Windows signing (electron-builder reads these automatically when present).
-          # WIN_CSC_LINK accepts base64 or a path; we ship the PFX as a repo-secret-encoded file.
-          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
-          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
-          # macOS signing + notarization (needs Apple Developer ID Application cert)
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          CSC_FOR_PULL_REQUEST: 'false'
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
