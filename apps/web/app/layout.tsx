@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
 import Navbar from "@/components/web/navbar";
 import TitleBar from "@/components/desktop/TitleBar";
 import ElectronThemeSync from "@/components/desktop/ElectronThemeSync";
@@ -20,9 +21,39 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-    title: "George Shenoda | Full-Stack Developer",
-    description:
-        "Portfolio of George Shenoda — full-stack developer bridging mechatronics and code. Responsive web apps, IoT dashboards, and business automation from concept to deployment.",
+    metadataBase: new URL(SITE_URL),
+    title: {
+        default: `${SITE_NAME} | Full-Stack Developer`,
+        template: `%s | ${SITE_NAME}`,
+    },
+    description: SITE_DESCRIPTION,
+    keywords: [
+        "George Shenoda",
+        "full-stack developer",
+        "mechatronics",
+        "web development",
+        "business automation",
+        "IoT dashboards",
+        "Next.js",
+        "React",
+    ],
+    authors: [{ name: SITE_NAME }],
+    alternates: {
+        canonical: "/",
+    },
+    openGraph: {
+        type: "website",
+        siteName: SITE_NAME,
+        title: `${SITE_NAME} | Full-Stack Developer`,
+        description: SITE_DESCRIPTION,
+        url: SITE_URL,
+        locale: "en_US",
+    },
+    twitter: {
+        card: "summary",
+        title: `${SITE_NAME} | Full-Stack Developer`,
+        description: SITE_DESCRIPTION,
+    },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

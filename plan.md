@@ -1,8 +1,8 @@
 # Master Plan — Portfolio → Website + Desktop App + Mobile App
 
-> Status: IN PROGRESS — planning finalized 2026-08-22. Execute steps in order.
+> Status: COMPLETE — all steps executed 2026-08-22. Remaining items are flagged USER ACTIONS (Vercel root dir, store accounts, screenshots, final domain).
 > Stack: Next.js 16.3 (App Router), React 19, Tailwind 4, tw-animate-css, nodemailer server action.
-> Next session prompt: "read plan.md and start Step 6".
+> Next session prompt: "read plan.md and start Step 6" no longer applies — see USER ACTION notes inline.
 
 ## Goal
 
@@ -126,12 +126,13 @@ all apps startup: try remote → fallback to bundled snapshot (offline-safe)
 - [~] Screenshot sets per required device sizes (scripted simulator captures) — capture commands + size matrix documented in `docs/store-listings.md`; actual capture needs emulators/simulators = USER ACTION
 - [x] Bundle ID `com.georgeshenoda.portfolio` set in `apps/mobile/app.json`; prerequisites flagged in `docs/store-listings.md`: Google Play account ($25 once), Apple Developer ($99/yr), EAS account/link, EXPO_PUBLIC_SITE_URL at build time
 
-## Step 6 — SEO phase (needs final domain)
+## Step 6 — SEO phase (needs final domain) ✅ DONE 2026-08-22
 
-- [ ] Full metadata object: title template, description, keywords, authors, OpenGraph + Twitter card, canonical via `metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? …)`
-- [ ] `app/sitemap.ts` (single-page portfolio)
-- [ ] `app/robots.ts` — allow all, disallow `/api/`
-- [ ] Optional JSON-LD `Person` schema
+- [x] Full metadata object: title template, description, keywords, authors, OpenGraph + Twitter card, canonical via `metadataBase: new URL(SITE_URL)` — `apps/web/app/layout.tsx` + `lib/site.ts`
+- [x] `app/sitemap.ts` (home + /privacy)
+- [x] `app/robots.ts` — allow all, disallow `/api/`, sitemap linked
+- [x] JSON-LD `Person` schema injected on home page
+- Verified: robots.txt/sitemap.xml prerendered at build; og:title + ld+json present in served HTML. URLs fall back to localhost until `NEXT_PUBLIC_SITE_URL` is set with the final domain
 
 ---
 
