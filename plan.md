@@ -2,7 +2,7 @@
 
 > Status: IN PROGRESS — planning finalized 2026-08-22. Execute steps in order.
 > Stack: Next.js 16.3 (App Router), React 19, Tailwind 4, tw-animate-css, nodemailer server action.
-> Next session prompt: "read plan.md and start Step 5".
+> Next session prompt: "read plan.md and start Step 6".
 
 ## Goal
 
@@ -118,13 +118,13 @@ all apps startup: try remote → fallback to bundled snapshot (offline-safe)
 - [x] `eas.json` profiles: development / preview (APK sideload) / production (AAB + IPA)
 - Gate: `tsc --noEmit` clean + `expo export --platform android` produces Hermes bundle. Env note: mobile uses `EXPO_PUBLIC_SITE_URL` (Expo's native env prefix) instead of `NEXT_PUBLIC_SITE_URL`; set it at EAS build time
 
-## Step 5 — Store listings prep (both stores)
+## Step 5 — Store listings prep (both stores) ✅ DONE 2026-08-22
 
-- [ ] Website route `/privacy` privacy policy page (required by both stores)
-- [ ] Store copy: name/subtitle/full descriptions, keyword sets, category (Productivity/Business)
-- [ ] Data-safety declarations: contact form collects name/email/message; no trackers/analytics
-- [ ] Screenshot sets per required device sizes (scripted simulator captures)
-- [ ] Bundle ID `com.georgeshenoda.portfolio`; flag prerequisites user must create: Google Play account ($25 once), Apple Developer ($99/yr)
+- [x] Website route `/privacy` privacy policy page (required by both stores) — `apps/web/app/privacy/page.tsx`
+- [x] Store copy: name/subtitle/full descriptions, keyword sets, category (Productivity/Business) — `docs/store-listings.md`
+- [x] Data-safety declarations: contact form collects name/email/message; no trackers/analytics — in `docs/store-listings.md`
+- [~] Screenshot sets per required device sizes (scripted simulator captures) — capture commands + size matrix documented in `docs/store-listings.md`; actual capture needs emulators/simulators = USER ACTION
+- [x] Bundle ID `com.georgeshenoda.portfolio` set in `apps/mobile/app.json`; prerequisites flagged in `docs/store-listings.md`: Google Play account ($25 once), Apple Developer ($99/yr), EAS account/link, EXPO_PUBLIC_SITE_URL at build time
 
 ## Step 6 — SEO phase (needs final domain)
 
