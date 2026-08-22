@@ -2,7 +2,7 @@
 
 > Status: IN PROGRESS — planning finalized 2026-08-22. Execute steps in order.
 > Stack: Next.js 16.3 (App Router), React 19, Tailwind 4, tw-animate-css, nodemailer server action.
-> Next session prompt: "read plan.md and start Step 2".
+> Next session prompt: "read plan.md and start Step 3".
 
 ## Goal
 
@@ -81,20 +81,21 @@ all apps startup: try remote → fallback to bundled snapshot (offline-safe)
 - [x] `app/layout.tsx`: mount `<TitleBar/>` above Navbar; metadata title `"Create Next App"` → `"George Shenoda | Full-Stack Developer"` + real description
 - [x] Document `NEXT_PUBLIC_SITE_URL` env (used by desktop contact fallback, mobile contact, future SEO metadataBase) → `.env.example`
 
-## Step 2 — Electron shell (apps/desktop)
+## Step 2 — Electron shell (apps/desktop) ✅ DONE 2026-08-22
 
-- [ ] Deps (in workspace): `electron`, `electron-builder`, `concurrently`, `wait-on`, `cross-env`
-- [ ] `apps/desktop/electron/main.mjs`:
+- [x] Deps (in workspace): `electron`, `electron-builder`, `cross-env` *(deviation: `concurrently`/`wait-on` not needed — main.mjs spawns and health-checks the Next server itself)*
+- [x] `apps/desktop/electron/main.mjs`:
   - Dev: programmatic Next server on port 34567 → loadURL
-  - Prod: spawn `apps/web/.next/standalone/server.js` child via `process.execPath` + `ELECTRON_RUN_AS_NODE=1`, HOSTNAME=127.0.0.1
+  - Prod: spawn `apps/web/.next/standalone/apps/web/server.js` child via `process.execPath` + `ELECTRON_RUN_AS_NODE=1`, HOSTNAME=127.0.0.1
   - BrowserWindow 1280×800 (min 1024×640), bg `#0d1515`, show on ready-to-show, kill child on quit, single-instance lock
   - Security: contextIsolation true, nodeIntegration false, sandboxed preload, `setWindowOpenHandler` → `shell.openExternal` for http(s)
-  - `titleBarOverlay: { color:'#151d1d', symbolColor:'#e6e6e6', height:40 }`; sync overlay color with theme toggle via IPC
-- [ ] `preload.cjs`: contextBridge exposing `{ isDesktop, platform }` only
-- [ ] Scripts: `electron:dev`, `electron:build` (`cross-env ELECTRON_BUILD=true next build` in apps/web + assemble standalone + electron-builder)
-- [ ] `apps/web/next.config.ts`: `output:'standalone'` ONLY when `ELECTRON_BUILD=true` — normal builds byte-identical to today
-- [ ] `electron-builder.yml`: appId `com.georgeshenoda.portfolio`, productName `George Shenoda`, output `release/`, win nsis+portable / mac dmg+zip / linux AppImage+deb, extraResources standalone+public, exclude `.env`
-- [ ] `scripts/make-icons.mjs` pipeline stubbed for future `assets/brand/icon.svg`
+  - `titleBarOverlay: { color:'#151d1d', symbolColor:'#e6e6e6', height:40 }`; sync overlay color with theme toggle via IPC (`theme-changed`; Linux keeps standard frame)
+- [x] `preload.cjs`: contextBridge exposing `{ isDesktop, platform }` + narrow `setTheme(theme)` sender for overlay sync
+- [x] Scripts: `electron:dev`, `electron:build` (`cross-env ELECTRON_BUILD=true next build` in apps/web + assemble standalone + electron-builder)
+- [x] `apps/web/next.config.ts`: `output:'standalone'` ONLY when `ELECTRON_BUILD=true` — normal builds byte-identical to today *(verified: no standalone dir on normal build)*
+- [x] `electron-builder.yml`: appId `com.georgeshenoda.portfolio`, productName `George Shenoda`, output `release/`, win nsis+portable / mac dmg+zip / linux AppImage+deb, extraResources standalone (+public/static merged by assemble script), exclude `.env`
+- [x] `scripts/make-icons.mjs` pipeline stubbed for future `assets/brand/icon.svg`
+- Verified locally on Windows: dev mode (window + API through shell), prod standalone mode (server.js child + API 200); installer dist deferred to Step 3
 
 ## Step 3 — CI + local verification
 

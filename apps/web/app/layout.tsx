@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import Navbar from "@/components/web/navbar";
 import TitleBar from "@/components/desktop/TitleBar";
+import ElectronThemeSync from "@/components/desktop/ElectronThemeSync";
 import { ThemeProvider } from "next-themes";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -46,6 +47,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                     enableSystem
                 >
                     <TitleBar />
+                    <ElectronThemeSync />
                     <Navbar />
                     {children}
                 </ThemeProvider>

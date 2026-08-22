@@ -11,7 +11,13 @@
     "build": "npm run build -w @portfolio/web",
     "start": "npm run start -w @portfolio/web",
     "lint": "npm run lint -w @portfolio/web",
-    "typecheck": "npm run typecheck -w @portfolio/web"
+    "typecheck": "npm run typecheck -w @portfolio/web",
+    "desktop:dev": "npm run dev -w @portfolio/desktop",
+    "desktop:build": "npm run build -w @portfolio/desktop",
+    "desktop:dist": "npm run dist -w @portfolio/desktop"
   },
-  "devDependencies": {}
+  "devDependencies": {},
+  "allowScripts": {
+    "electron@33.4.11": true
+  }
 }

@@ -18,6 +18,7 @@ function Project({ title, techstack, link, image }: ProjectProps) {
         >
             <div className="relative w-full aspect-video overflow-hidden">
                 <Image
+                    unoptimized
                     src={image}
                     alt={`${title} screenshot`}
                     fill
