@@ -3,6 +3,7 @@ import Workflow from "@/components/web/workflow";
 import Business from "@/components/web/Buisness";
 import Contact from "@/components/web/Contact";
 import Projects from "@/components/web/projects";
+import Trust from "@/components/web/Trust";
 import Footer from "@/components/web/footer";
 import { SITE_NAME } from "@/lib/site";
 
@@ -32,6 +33,7 @@ export default function Home() {
       <Workflow />
       <Business />
       <Projects />
+      <Trust />
       <Contact />
       <Footer />
     </>

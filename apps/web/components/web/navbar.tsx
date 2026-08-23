@@ -81,7 +81,7 @@ function Navbar() {
                 <div className="flex items-center gap-2">
                     <ThemeSwitcher />
                     <Button
-                        className="hidden rounded-full text-white hover:scale-[1.03] active:scale-[0.98] transition-all sm:inline-flex"
+                        className="hidden rounded-full h-11 px-5 text-white hover:scale-[1.03] active:scale-[0.98] transition-all sm:inline-flex"
                         onClick={async () => {
                             const response = await fetch("/assets/resume.pdf");
                             const blob = await response.blob();
@@ -98,7 +98,7 @@ function Navbar() {
                     <DropdownMenu>
                         <DropdownMenuTrigger
                             render={
-                                <Button variant="outline" size="icon" className="md:hidden" aria-label="Open navigation menu">
+                                <Button variant="outline" size="icon" className="size-11 md:hidden" aria-label="Open navigation menu">
                                     <Menu className="size-5" />
                                 </Button>
                             }

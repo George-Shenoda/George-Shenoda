@@ -20,15 +20,6 @@ function Hero() {
             <div aria-hidden className="absolute inset-0 -z-10 pointer-events-none [background-image:radial-gradient(var(--border)_1px,transparent_1px)] [background-size:28px_28px] [mask-image:radial-gradient(ellipse_60%_65%_at_50%_30%,black,transparent)]"></div>
 
             <div className="flex flex-col px-5 pt-20 pb-24 sm:pt-28 sm:pb-28 items-center relative mx-auto text-center max-w-3xl">
-                <Reveal delay="0">
-                    <p className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 dark:bg-primary/15 px-4 py-1.5 text-sm font-medium text-primary">
-                        <span className="relative flex size-2.5">
-                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60"></span>
-                            <span className="relative inline-flex size-2.5 rounded-full bg-primary"></span>
-                        </span>
-                        Available for new projects
-                    </p>
-                </Reveal>
                 <Reveal delay="100">
                     <h1 className="font-bold text-4xl leading-tight sm:text-6xl sm:leading-[1.1] mt-6 max-w-2xl">Bridging Mechatronics &amp; Code:</h1>
                 </Reveal>
@@ -79,7 +70,7 @@ function Hero() {
                 aria-label="Scroll to workflow"
                 className="absolute bottom-8 left-1/2 -translate-x-1/2 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
             >
-                <ChevronDown className="w-6 h-6 animate-bounce" />
+                <ChevronDown className="w-6 h-6 motion-safe:animate-bounce" />
             </button>
         </section>
     );

@@ -5,9 +5,8 @@ import Reveal from "./Reveal";
 function workflow() {
     return (
         <section id="workflow" className="dark:bg-[#151d1d] bg-[#eee]">
-            <div className="flex flex-col mx-auto items-center text-center w-full pt-20 pb-20">
+            <div className="flex flex-col mx-auto items-center text-center w-full pt-20 pb-20 sm:pt-28 sm:pb-28 px-4">
                 <Reveal>
-                    <p className="font-mono text-sm tracking-widest uppercase text-primary mb-3">Process</p>
                     <h2 className="text-3xl sm:text-4xl font-bold mb-5">
                         Concept to Deployment
                     </h2>

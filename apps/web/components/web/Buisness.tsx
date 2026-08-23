@@ -7,7 +7,6 @@ function Business() {
 
             <div className="py-24 flex flex-col md:flex-row justify-between items-center gap-12 md:gap-24 mx-auto max-w-4xl px-4 ">
                 <Reveal className="flex-1">
-                    <p className="font-mono text-sm tracking-widest uppercase text-primary mb-3">Beyond the web</p>
                     <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-foreground">Business Automation &amp; Optimization</h2>
                     <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
                         Beyond standard web interfaces, I engineer automated workflows that eliminate manual tasks. By leveraging Node.js and integrating custom APIs, I connect disparate business tools into unified, real-time systems.
