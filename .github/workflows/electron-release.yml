@@ -44,6 +44,7 @@ jobs:
           APPLE_ID_SECRET: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD_SECRET: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID_SECRET: ${{ secrets.APPLE_TEAM_ID }}
+        shell: bash
         run: |
           if [ -n "$WIN_CSC_LINK_SECRET" ]; then echo "WIN_CSC_LINK=$WIN_CSC_LINK_SECRET" >> "$GITHUB_ENV"; fi
           if [ -n "$WIN_CSC_KEY_PASSWORD_SECRET" ]; then echo "WIN_CSC_KEY_PASSWORD=$WIN_CSC_KEY_PASSWORD_SECRET" >> "$GITHUB_ENV"; fi
