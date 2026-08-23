@@ -57,7 +57,7 @@ export default function Contact() {
   };
 
     return (
-        <div id="contact" className="w-full flex items-center justify-center p-6 sm:p-10">
+        <div id="contact" className="w-full flex items-center justify-center p-6 sm:p-10 dark:bg-[#151d1d] bg-[#eee]">
           <Reveal className="w-full max-w-4xl">
           <div className="w-full max-w-4xl p-6 sm:p-10 bg-background dark:bg-[#161d1d] rounded-3xl shadow-2xl text-center border border-black/10 dark:border-white/10 transition-all">
         <h2 className="text-3xl sm:text-4xl font-bold mb-4">Let&apos;s Engineer Your Next Solution</h2>
