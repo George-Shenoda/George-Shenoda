@@ -14,7 +14,7 @@ function Project({ title, techstack, link, image }: ProjectProps) {
             href={link}
             target="_blank"
             rel="noopener noreferrer"
-            className="group bg-white dark:bg-[#192020] rounded-xl shadow-lg border overflow-hidden flex flex-col hover:scale-105 transition-all duration-300 dark:hover:shadow-primary/20"
+            className="group bg-white dark:bg-[#192020] rounded-xl shadow-md border border-black/10 dark:border-white/10 overflow-hidden flex flex-col hover:scale-[1.02] hover:border-primary/40 hover:shadow-xl transition-all duration-300 dark:hover:shadow-primary/20"
         >
             <div className="relative w-full aspect-video overflow-hidden">
                 <Image
@@ -35,7 +35,7 @@ function Project({ title, techstack, link, image }: ProjectProps) {
                     {techstack.map((tech) => (
                         <li
                             key={tech}
-                            className="text-xs px-2.5 py-1 rounded-full ring-1 ring-secondary/20 bg-secondary/10 text-secondary"
+                            className="text-[13px] font-medium px-3 py-1 rounded-full ring-1 ring-secondary/25 bg-secondary/10 text-secondary"
                         >
                             {tech}
                         </li>

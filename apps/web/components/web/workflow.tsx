@@ -7,12 +7,13 @@ function workflow() {
         <section id="workflow" className="dark:bg-[#151d1d] bg-[#eee]">
             <div className="flex flex-col mx-auto items-center text-center w-full pt-20 pb-20">
                 <Reveal>
-                    <h2 className="text-3xl font-bold mb-5">
+                    <p className="font-mono text-sm tracking-widest uppercase text-primary mb-3">Process</p>
+                    <h2 className="text-3xl sm:text-4xl font-bold mb-5">
                         Concept to Deployment
                     </h2>
                 </Reveal>
                 <Reveal delay="100">
-                    <p className="text-sm max-w-xl text-foreground/70">
+                    <p className="text-base sm:text-lg max-w-xl text-muted-foreground leading-relaxed">
                         Applying engineering precision to full-stack development. A
                         structured, independent workflow designed to build scalable
                         web applications and automate complex business processes.

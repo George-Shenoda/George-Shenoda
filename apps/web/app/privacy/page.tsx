@@ -6,7 +6,7 @@ export const metadata: Metadata = {
         "Privacy policy for George Shenoda's portfolio website and mobile applications.",
 };
 
-const sectionClass = "max-w-3xl mx-auto px-4 py-16 text-sm leading-relaxed";
+const sectionClass = "max-w-3xl mx-auto px-4 py-16 text-base leading-relaxed";
 const headingClass = "text-2xl font-bold mb-6";
 const subHeadingClass = "text-lg font-semibold mt-10 mb-3";
 

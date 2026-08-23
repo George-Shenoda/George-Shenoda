@@ -37,10 +37,11 @@ function Projects() {
         <section id="projects" className="dark:bg-[#151d1d] bg-[#eee]">
             <div className="flex flex-col mx-auto items-center text-center w-full pt-20 pb-20">
                 <Reveal>
-                    <h2 className="text-3xl font-bold mb-5">Featured Projects</h2>
+                    <p className="font-mono text-sm tracking-widest uppercase text-primary mb-3">Selected work</p>
+                    <h2 className="text-3xl sm:text-4xl font-bold mb-5">Featured Projects</h2>
                 </Reveal>
                 <Reveal delay="100">
-                    <p className="text-sm max-w-xl text-foreground/70">
+                    <p className="text-base sm:text-lg max-w-xl text-muted-foreground leading-relaxed">
                         A selection of applications I have designed and built,
                         combining full-stack development with practical engineering
                         solutions.
@@ -71,11 +72,11 @@ function Projects() {
                                     Math.min(count + LOAD_STEP, projects.length)
                                 )
                             }
-                            className="cursor-pointer px-8 py-6 text-primary hover:text-primary hover:bg-accent"
+                            className="cursor-pointer px-8 py-6 h-auto text-base font-semibold text-primary hover:text-primary hover:bg-accent active:scale-[0.98]"
                         >
                             Load More ({remainingCount} more)
                         </Button>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-sm text-muted-foreground">
                             Showing {visibleProjects.length} of {projects.length} projects
                         </p>
                     </Reveal>

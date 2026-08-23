@@ -7,22 +7,23 @@ function Business() {
 
             <div className="py-24 flex flex-col md:flex-row justify-between items-center gap-12 md:gap-24 mx-auto max-w-4xl px-4 ">
                 <Reveal className="flex-1">
-                    <h2 className="text-3xl font-bold mb-4 text-foreground">Business Automation & Optimization</h2>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
+                    <p className="font-mono text-sm tracking-widest uppercase text-primary mb-3">Beyond the web</p>
+                    <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-foreground">Business Automation &amp; Optimization</h2>
+                    <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
                         Beyond standard web interfaces, I engineer automated workflows that eliminate manual tasks. By leveraging Node.js and integrating custom APIs, I connect disparate business tools into unified, real-time systems.
                     </p>
                     <div className="mt-8 flex flex-col gap-4">
                         <div className="flex items-center gap-3">
-                            <CheckCircle className="h-5 w-5 text-primary" />
-                            <span className="text-sm font-medium text-foreground">Automated Email Workflows & Notifications</span>
+                            <CheckCircle className="h-5 w-5 shrink-0 text-primary" />
+                            <span className="text-base font-medium text-foreground">Automated Email Workflows &amp; Notifications</span>
                         </div>
                         <div className="flex items-center gap-3">
-                            <CheckCircle className="h-5 w-5 text-primary" />
-                            <span className="text-sm font-medium text-foreground">Real-time Data Dashboards & Syncing</span>
+                            <CheckCircle className="h-5 w-5 shrink-0 text-primary" />
+                            <span className="text-base font-medium text-foreground">Real-time Data Dashboards &amp; Syncing</span>
                         </div>
                         <div className="flex items-center gap-3">
-                            <CheckCircle className="h-5 w-5 text-primary" />
-                            <span className="text-sm font-medium text-foreground">Third-party API Interfacing & Webhooks</span>
+                            <CheckCircle className="h-5 w-5 shrink-0 text-primary" />
+                            <span className="text-base font-medium text-foreground">Third-party API Interfacing &amp; Webhooks</span>
                         </div>
                     </div>
                 </Reveal>
