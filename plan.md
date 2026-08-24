@@ -1,8 +1,8 @@
 # Master Plan — Portfolio → Website + Desktop App + Mobile App
 
-> Status: COMPLETE — all steps executed 2026-08-22. Remaining items are flagged USER ACTIONS (Vercel root dir, store accounts, screenshots, final domain).
+> Status: PHASE 1 COMPLETE — all steps executed 2026-08-22. Remaining items are flagged USER ACTIONS (Vercel root dir, store accounts, screenshots, final domain).
 > Stack: Next.js 16.3 (App Router), React 19, Tailwind 4, tw-animate-css, nodemailer server action.
-> Next session prompt: "read plan.md and start Step 6" no longer applies — see USER ACTION notes inline.
+> PHASE 2 PLANNED (2026-08-24), not started — see below.
 
 ## Goal
 
@@ -157,3 +157,117 @@ all apps startup: try remote → fallback to bundled snapshot (offline-safe)
 ## Docs deliverable
 
 - `ELECTRON.md` at repo root: dev/build/release instructions + Vercel env setup (`EMAIL_USER`, `EMAIL_PASS`, `EMAIL_TO`, `NEXT_PUBLIC_SITE_URL`)
+
+---
+
+# PHASE 2 — CV System, Offline Mode & Mobile Parity Redesign
+
+> Status: **PLANNED 2026-08-24 — NOT STARTED.** Work through steps in order; tick boxes + note commit hashes as each lands. One commit per step.
+
+## Goal
+
+1. A real CV system: `/cv` page (minimalist editorial) + regenerated `resume.pdf`, fed by one shared data file.
+2. Desktop + mobile apps fully usable offline: cached projects, queued contact mail, offline CV viewing/PDF.
+3. Mobile app redesigned to match the web app's mobile viewport 100% (layout, type, colors, motion, sections).
+
+## Locked decisions (Phase 2)
+
+| Decision | Choice |
+|---|---|
+| CV positioning | "Full-Stack Developer \| Mechatronics Engineering Student" (matches site) |
+| CV design | Minimalist editorial — warm paper, near-black ink, typographic hierarchy, zero clutter |
+| Experience entries | ① Founder & Full-Stack Dev — G-Stack (Feb–May 2026): Elevate Studio site, client portal, landing page · ② IoT Intern — Samsung Innovation Campus (Aug–Oct 2025) |
+| Project cut (full-stack-first, 4) | GVMT Marketplace + Admin · GStack Client Portal · Elevate Studio website · IoT Smart Office System |
+| Links | linkedin.com/in/george-shenoda · github.com/george-shenoda (verify handles resolve before final PDF) |
+| Offline semantics | Apps render/function with no network; external handoffs (mailto, cert drive, live links) stay OS-level actions |
+| Projects offline | Remote-first fetch → persist to AsyncStorage; offline renders last-cached ("Last updated…" caption) → bundled snapshot as final fallback |
+| Contact offline | Outbox queue: failed/offline submissions persisted locally, auto-flushed on reconnect (NetInfo / `online` event); visible "saved, will send automatically" state |
+| CV offline | Mobile: native sheet from shared data + bundled resume.pdf shared via expo-file-system/expo-sharing. Desktop: `/cv` via localhost + `window.print()` |
+| Section order parity | Hero → Workflow → Business → Projects → Trust → Contact → Footer (**Trust is missing on mobile today**) |
+
+## Known mobile-vs-web gaps driving Step 12–13 (audit 2026-08-24)
+
+- Fonts: web renders Inter (+ JetBrains Mono accents); mobile ships neither globally
+- Colors off: dark bg `#0a0a0a` vs web's actual `#0d1515`; muted text/borders/cards all mismatched shades
+- Layout divergences: horizontal workflow carousel vs web's vertical stack; project cards capped at 360px vs full-width; inline navbar links vs web's hamburger dropdown (<768px behavior)
+- Missing: Trust section, scroll-progress bar, navbar scroll shadow/blur, theme-switcher dropdown, SafeArea insets, scroll-triggered reveals (mobile fires on mount)
+- Type scale undersized throughout (13–15px vs web's 16px bodies, 28 vs 30 headings)
+
+## Step 8 — Shared CV data layer + portable assets `[commit: feat(shared): cv data layer + portable project assets]`
+
+- [ ] `packages/shared/src/cv.ts`: typed CV model (profile, links, summary, experience[], education[], projects[], skillGroups{}, certifications[], languages[]) with Phase-2 locked content; export via `src/index.ts`
+- [ ] `packages/shared/src/projects.ts`: add stable `id` per project; replace `placehold.co` image with local asset path
+- [ ] Real screenshots into `apps/web/public/assets/projects/*` (GVMT, client portal, Elevate Studio, IoT Smart Office)
+- [ ] Verify new GitHub/LinkedIn handles resolve; then freeze them in cv.ts
+
+## Step 9 — Web `/cv` route `[commit: feat(web): printable /cv page]`
+
+- [ ] READ `node_modules/next/dist/docs/` guides first (project structure, metadata — Next 16 breaking changes per AGENTS.md)
+- [ ] `apps/web/app/cv/page.tsx` server component rendering shared cv data, minimalist editorial, A4 proportions
+- [ ] `@media print` styles: exact A4, margins, controlled page breaks; screen-only "Save as PDF" toolbar (window.print)
+- [ ] Metadata + `app/sitemap.ts` entry; "View CV" link added beside existing download buttons (hero + navbar)
+
+## Step 10 — PDF pipeline `[commit: chore(resume): generate pdf from /cv]`
+
+- [ ] `scripts/make-cv-pdf.mjs`: headless Edge `--print-to-pdf` against built site → writes `apps/web/public/assets/resume.pdf` (zero new deps)
+- [ ] Regenerate PDF; verify hero/navbar blob-download serves the new file
+
+## Step 11 — Offline foundation (desktop + shared) `[commit: feat(offline): queued contact sending]`
+
+- [ ] `packages/shared/src/outbox.ts`: storage-pluggable contact queue (add/list/dequeue/mark-sent, retry semantics)
+- [ ] `apps/web/components/web/Contact.tsx` Electron path: localStorage adapter + auto-flush on window `online` event and on mount; queued/pending status UI
+- [ ] Grep-audit: zero runtime remote refs left in desktop surface (fonts safe — next/font self-hosts at build)
+
+## Step 12 — Mobile foundation rebuild `[commit: feat(mobile): parity foundation]`
+
+- [ ] `npx expo install`: react-native-safe-area-context, @react-native-async-storage/async-storage, @react-native-community/netinfo, expo-file-system, expo-sharing, expo-blur, expo-splash-screen
+- [ ] Add deps: `@expo-google-fonts/inter` (global Inter), `lucide-react-native` + `react-native-svg` (exact icon parity)
+- [ ] Theme token fixes: dark bg `#0d1515`, mutedText `#4b4b4b`/`#bec6c6`, card `#192020`, contact-card `#161d1d`, border `#d4d4d4`, bands `#eee`/`#151d1d`
+- [ ] SafeArea insets wired; global font loading behind splash screen; StatusBar per scheme
+- [ ] Scroll-context provider (scrollY) feeding navbar shadow (>8px), 2px teal→cyan progress bar, active-section logic (top ≤160px)
+- [ ] Reveal rewrite: FadeInUp 16px→0, 700ms ease-out cubic, fires once when ~10% visible & 40px above fold, delay map kept, reduced-motion respected; remove dead `Stagger`
+- [ ] Rotation-safe geometry (`useWindowDimensions`, no module-scope Dimensions)
+
+## Step 13 — Mobile sections 1:1 port `[commit: feat(mobile): 1:1 section parity with web]`
+
+- [ ] Navbar: brand 20 bold · 44×44 theme button w/ Light/Dark/System popover (radius 22, p6, 100ms fade-zoom-drop) · 44×44 hamburger dropdown (min-w 176, rounded-22, active item primary semibold) · blur bg + scroll shadow · progress bar
+- [ ] Hero: glow ellipse + 28px dot-grid backdrops · padding 20/80/96 · H1+H2 36px bold (H2 gradient-clipped, MaskedView auto-height — fixes fixed-96 bug) · para 16/26 muted max-w 576 · mono 14 capabilities · stacked full-width CTAs gap-3 mt-9 (gradient "Start a Project", outlined "View My Work", both 72px tall radius 26 scale .98) · muted "Download CV" FileDown text-link mt-5 · bouncing chevron
+- [ ] Workflow: replace carousel with vertical stacked cards (band, H2 30 mb-5, cards p24/r14/gap16, alternating 18px tinted icon tiles: Lightbulb/DraftingCompass/Code/Rocket)
+- [ ] Business: py-96 px-16 gap-48, checklist upgraded to 20px CheckCircle icons + 16px medium labels (gear graphic stays hidden = web <768px truth)
+- [ ] Projects: full-width cards (screen−32), r14/shadow-md, title row 20 bold + ArrowUpRight 20 muted, chips 13px px12/py4 pill secondary tints, whole card pressable, bundled images keyed by `id`, AsyncStorage last-cached fallback + caption
+- [ ] Trust (NEW section): raw-bg strip between bands, stats `{N}+ / 24h / 100%` 36px JetBrains Mono primary + labels 16 medium muted (gaps 56×32), three Cards mt-56 gap-24 delays 0/150/300 (CalendarCheck/FileText/KeyRound)
+- [ ] Contact: band wrapper p-24, elevated card r22 shadow-2xl `#161d1d`/white, H2 30 mb-4, inputs r14 focus-primary border, error banner (destructive/10, AlertCircle 20), full-width gradient submit 72px r26 + Loader2 spin, caption "Typically replies within 24 hours…", success screen (emerald CheckCircle2 64-circle), outbox queued banner
+- [ ] Footer: centered vertical stack, gaps 16, padding 32, copyright 14px
+
+## Step 14 — Mobile CV + connectivity `[commit: feat(mobile): offline cv sheet + auto-flush queue]`
+
+- [ ] `src/components/CVSheet.tsx`: core-RN Modal (zero nav deps), own ScrollView, paper-surface document rendered from shared cv data regardless of app theme; close button; footer actions
+- [ ] Hero/Navbar CV buttons open CVSheet (replace remote-PDF Linking)
+- [ ] "Save PDF": bundled resume.pdf → cache copy (expo-file-system) → share/open (expo-sharing) — works in airplane mode
+- [ ] NetInfo listener flushes outbox on reconnect; launch + AppState→active triggers too
+
+## Step 15 — Verification matrix `[fixes committed as needed]`
+
+- [ ] Web: lint + typecheck + build green; `/cv` visual pass (desktop/mobile widths) + print preview; fresh PDF downloads correctly
+- [ ] Desktop: `dev` smoke test of `/cv`; airplane-mode run makes zero non-localhost requests; queued contact flushes when back online
+- [ ] Mobile: `tsc --noEmit` clean; Expo Go matrix — airplane-mode cold start (cached projects render, CV sheet opens, PDF shares offline, message queues) → reconnect → auto-send observed; section-by-section side-by-side vs web at 390px & 430px widths
+- [ ] Regenerate resume.pdf one final time after any content tweaks
+
+## Phase 2 honest caveats (approximations, not pixel-clones)
+
+- Blur intensity: expo-blur ≠ CSS backdrop-blur-md (closest possible)
+- Hero dot-grid edge mask approximated with gradient fades
+- CSS `text-wrap: balance/pretty` has no RN equivalent
+
+## Phase 2 new dependencies (approved scope)
+
+| Package | Why |
+|---|---|
+| react-native-safe-area-context | notch/status-bar safety (absent today) |
+| @react-native-async-storage/async-storage | projects cache + mail outbox persistence |
+| @react-native-community/netinfo | instant reconnect detection for auto-flush |
+| expo-file-system + expo-sharing | fully-offline PDF export/share |
+| expo-blur | navbar backdrop-blur approximation |
+| expo-splash-screen | hold splash while fonts load |
+| @expo-google-fonts/inter | web's effective UI font |
+| lucide-react-native + react-native-svg | exact icon parity with web's lucide set |
