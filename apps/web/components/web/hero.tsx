@@ -1,7 +1,8 @@
 'use client';
 import { Button } from '@/components/ui/button'
 import { scrollToView } from '@/utils/scroll'
-import { ChevronDown, FileDown } from 'lucide-react'
+import { ChevronDown, FileDown, FileText } from 'lucide-react'
+import Link from 'next/link'
 import Reveal from './Reveal'
 
 const capabilities = [
@@ -46,22 +47,32 @@ function Hero() {
                             View My Work
                         </Button>
                     </div>
-                    <button
-                        onClick={async () => {
-                            const response = await fetch("/assets/resume.pdf");
-                            const blob = await response.blob();
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement("a");
-                            a.href = url;
-                            a.download = "resume.pdf";
-                            a.click();
-                            URL.revokeObjectURL(url);
-                        }}
-                        className="group mt-5 inline-flex cursor-pointer items-center gap-1.5 text-sm font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-primary hover:underline"
-                    >
-                        <FileDown className="size-4 transition-transform group-hover:translate-y-0.5" />
-                        Download CV
-                    </button>
+                    <div className="mt-5 flex items-center gap-4">
+                        <button
+                            onClick={async () => {
+                                const response = await fetch("/assets/resume.pdf");
+                                const blob = await response.blob();
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = "resume.pdf";
+                                a.click();
+                                URL.revokeObjectURL(url);
+                            }}
+                            className="group inline-flex cursor-pointer items-center gap-1.5 text-sm font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-primary hover:underline"
+                        >
+                            <FileDown className="size-4 transition-transform group-hover:translate-y-0.5" />
+                            Download CV
+                        </button>
+                        <span aria-hidden className="h-3 w-px bg-border" />
+                        <Link
+                            href="/cv"
+                            className="group inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-primary hover:underline"
+                        >
+                            <FileText className="size-4" />
+                            View CV
+                        </Link>
+                    </div>
                 </Reveal>
             </div>
 

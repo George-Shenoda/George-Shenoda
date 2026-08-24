@@ -202,10 +202,10 @@ all apps startup: try remote → fallback to bundled snapshot (offline-safe)
 
 ## Step 9 — Web `/cv` route `[commit: feat(web): printable /cv page]`
 
-- [ ] READ `node_modules/next/dist/docs/` guides first (project structure, metadata — Next 16 breaking changes per AGENTS.md)
-- [ ] `apps/web/app/cv/page.tsx` server component rendering shared cv data, minimalist editorial, A4 proportions
-- [ ] `@media print` styles: exact A4, margins, controlled page breaks; screen-only "Save as PDF" toolbar (window.print)
-- [ ] Metadata + `app/sitemap.ts` entry; "View CV" link added beside existing download buttons (hero + navbar)
+- [x] READ `node_modules/next/dist/docs/` guides first (project structure, metadata — Next 16 breaking changes per AGENTS.md)
+- [x] `apps/web/app/cv/page.tsx` server component rendering shared cv data, minimalist editorial, A4 proportions
+- [x] `@media print` styles: exact A4, margins, controlled page breaks; screen-only "Save as PDF" toolbar (window.print)
+- [x] Metadata + `app/sitemap.ts` entry; "View CV" link added beside existing download buttons (hero + navbar)
 
 ## Step 10 — PDF pipeline `[commit: chore(resume): generate pdf from /cv]`
 

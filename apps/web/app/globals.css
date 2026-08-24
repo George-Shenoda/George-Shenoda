@@ -149,3 +149,33 @@ body {
     scroll-margin-top: 5rem;
     }
 }
+
+/* --- /cv printable document ------------------------------------------ */
+
+@media print {
+    @page {
+        size: A4;
+        margin: 0;
+    }
+    html,
+    body {
+        background: #fff !important;
+    }
+    body:has(.cv-page) header {
+        display: none !important;
+    }
+    .no-print {
+        display: none !important;
+    }
+    .cv-page {
+        min-height: auto !important;
+        padding: 0 !important;
+        background: #fff !important;
+    }
+    .cv-sheet {
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 16mm 18mm !important;
+        box-shadow: none !important;
+    }
+}

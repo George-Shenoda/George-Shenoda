@@ -10,6 +10,7 @@ import {
 import { scrollToView } from "@/utils/scroll";
 import { ThemeSwitcher } from "./themeSwitcher";
 import { Menu } from "lucide-react";
+import Link from "next/link";
 
 const NAV_LINKS = [
     { id: "workflow", label: "Workflow" },
@@ -80,6 +81,13 @@ function Navbar() {
                 </nav>
                 <div className="flex items-center gap-2">
                     <ThemeSwitcher />
+                    <Button
+                        variant="ghost"
+                        className="hidden h-11 rounded-full px-4 text-[15px] font-medium text-foreground/80 hover:text-primary sm:inline-flex"
+                        render={<Link href="/cv" />}
+                    >
+                        View CV
+                    </Button>
                     <Button
                         className="hidden rounded-full h-11 px-5 text-white hover:scale-[1.03] active:scale-[0.98] transition-all sm:inline-flex"
                         onClick={async () => {
