@@ -5,3 +5,15 @@ export {
   type ContactPayload,
   type ContactResult,
 } from "./contact-client";
+export {
+  cv,
+  type Cv,
+  type CvProfile,
+  type CvLink,
+  type CvExperience,
+  type CvEducation,
+  type CvProject,
+  type CvSkillGroup,
+  type CvCertification,
+  type CvLanguage,
+} from "./cv";
