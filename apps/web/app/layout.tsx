@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter } from "next/font/google";
+import { Inter, JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
@@ -8,17 +8,10 @@ import TitleBar from "@/components/desktop/TitleBar";
 import ElectronThemeSync from "@/components/desktop/ElectronThemeSync";
 import { ThemeProvider } from "next-themes";
 
+// Self-hosted at build time (zero runtime font requests — required for the offline desktop app).
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
-
-const geistSans = Geist({
-    variable: "--font-geist-sans",
-    subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-    variable: "--font-geist-mono",
-    subsets: ["latin"],
-});
+const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-jakarta" });
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains" });
 
 export const metadata: Metadata = {
     metadataBase: new URL(SITE_URL),
@@ -63,10 +56,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             className={cn(
                 "h-full",
                 "antialiased",
-                geistSans.variable,
-                geistMono.variable,
                 "font-sans",
                 inter.variable,
+                jakarta.variable,
+                jetbrainsMono.variable,
             )}
             suppressHydrationWarning
             style={{ scrollBehavior: "smooth" }}

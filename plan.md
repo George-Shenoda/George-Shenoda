@@ -214,9 +214,9 @@ all apps startup: try remote → fallback to bundled snapshot (offline-safe)
 
 ## Step 11 — Offline foundation (desktop + shared) `[commit: feat(offline): queued contact sending]`
 
-- [ ] `packages/shared/src/outbox.ts`: storage-pluggable contact queue (add/list/dequeue/mark-sent, retry semantics)
-- [ ] `apps/web/components/web/Contact.tsx` Electron path: localStorage adapter + auto-flush on window `online` event and on mount; queued/pending status UI
-- [ ] Grep-audit: zero runtime remote refs left in desktop surface (fonts safe — next/font self-hosts at build)
+- [x] `packages/shared/src/outbox.ts`: storage-pluggable contact queue (add/list/dequeue/mark-sent, retry semantics)
+- [x] `apps/web/components/web/Contact.tsx` Electron path: localStorage adapter + auto-flush on window `online` event and on mount; queued/pending status UI
+- [x] Grep-audit: zero runtime remote refs left in desktop surface (fonts safe — next/font self-hosts at build) *(found + fixed one: Google Fonts CSS @import in globals.css replaced with self-hosted next/font Plus Jakarta Sans + JetBrains Mono; Geist loads removed as unused; built CSS verified 0 googleapis refs)*
 
 ## Step 12 — Mobile foundation rebuild `[commit: feat(mobile): parity foundation]`
 

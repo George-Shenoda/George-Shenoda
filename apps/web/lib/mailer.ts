@@ -3,6 +3,8 @@ import nodemailer from 'nodemailer';
 export type ContactFormState = {
   success?: boolean;
   error?: string;
+  /** Parity with shared ContactResult — never set by the web server action path. */
+  networkError?: boolean;
 };
 
 function buildContactEmailHtml(name: string, email: string, message: string) {

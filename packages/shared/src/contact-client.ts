@@ -7,6 +7,8 @@ export type ContactPayload = {
 export type ContactResult = {
   success: boolean;
   error?: string;
+  /** True when the request could not reach the server at all (offline, DNS, refused). Safe to queue for retry. */
+  networkError?: boolean;
 };
 
 export async function submitContact(
@@ -33,6 +35,7 @@ export async function submitContact(
   } catch {
     return {
       success: false,
+      networkError: true,
       error: "Could not reach the contact service. Please try again later.",
     };
   }

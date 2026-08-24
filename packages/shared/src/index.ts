@@ -6,6 +6,14 @@ export {
   type ContactResult,
 } from "./contact-client";
 export {
+  createOutbox,
+  createLocalStorageStorage,
+  type Outbox,
+  type OutboxItem,
+  type OutboxStorage,
+  type FlushResult,
+} from "./outbox";
+export {
   cv,
   type Cv,
   type CvProfile,
