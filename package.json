@@ -17,6 +17,7 @@
     "typecheck": "npm run typecheck -w @portfolio/web",
     "icons": "node scripts/make-icons.mjs",
     "shots": "node scripts/make-project-shots.mjs",
+    "cv:pdf": "node scripts/make-cv-pdf.mjs",
     "desktop:dev": "npm run dev -w @portfolio/desktop",
     "desktop:build": "cross-env ELECTRON_BUILD=true npm run build -w @portfolio/web && npm run assemble -w @portfolio/desktop",
     "desktop:dist": "npm run desktop:build && electron-builder"

@@ -209,8 +209,8 @@ all apps startup: try remote → fallback to bundled snapshot (offline-safe)
 
 ## Step 10 — PDF pipeline `[commit: chore(resume): generate pdf from /cv]`
 
-- [ ] `scripts/make-cv-pdf.mjs`: headless Edge `--print-to-pdf` against built site → writes `apps/web/public/assets/resume.pdf` (zero new deps)
-- [ ] Regenerate PDF; verify hero/navbar blob-download serves the new file
+- [x] `scripts/make-cv-pdf.mjs`: headless Edge `--print-to-pdf` against built site → writes `apps/web/public/assets/resume.pdf` (zero new deps)
+- [x] Regenerate PDF; verify hero/navbar blob-download serves the new file *(A4 MediaBox, 2 pages, 213 KB; served as application/pdf 200)*
 
 ## Step 11 — Offline foundation (desktop + shared) `[commit: feat(offline): queued contact sending]`
 
