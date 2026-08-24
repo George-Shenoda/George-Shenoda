@@ -162,7 +162,9 @@ all apps startup: try remote → fallback to bundled snapshot (offline-safe)
 
 # PHASE 2 — CV System, Offline Mode & Mobile Parity Redesign
 
-> Status: **PLANNED 2026-08-24 — NOT STARTED.** Work through steps in order; tick boxes + note commit hashes as each lands. One commit per step.
+> Status: **IN PROGRESS.** Steps 8–12 DONE (commits: 192b922, d7efde8, f1b89a4, 9fd5cda, 194c719 + foundation below).
+> ▶▶ RESUME HERE (next session): **Step 13 — Mobile sections 1:1 port.** Steps 8–11 verified green; Step 12 typecheck + `expo export --platform android` (Hermes 2.5MB bundle) both green.
+> Work through steps in order; tick boxes + note commit hashes as each lands. One commit per step.
 
 ## Goal
 
@@ -220,13 +222,13 @@ all apps startup: try remote → fallback to bundled snapshot (offline-safe)
 
 ## Step 12 — Mobile foundation rebuild `[commit: feat(mobile): parity foundation]`
 
-- [ ] `npx expo install`: react-native-safe-area-context, @react-native-async-storage/async-storage, @react-native-community/netinfo, expo-file-system, expo-sharing, expo-blur, expo-splash-screen
-- [ ] Add deps: `@expo-google-fonts/inter` (global Inter), `lucide-react-native` + `react-native-svg` (exact icon parity)
-- [ ] Theme token fixes: dark bg `#0d1515`, mutedText `#4b4b4b`/`#bec6c6`, card `#192020`, contact-card `#161d1d`, border `#d4d4d4`, bands `#eee`/`#151d1d`
-- [ ] SafeArea insets wired; global font loading behind splash screen; StatusBar per scheme
-- [ ] Scroll-context provider (scrollY) feeding navbar shadow (>8px), 2px teal→cyan progress bar, active-section logic (top ≤160px)
-- [ ] Reveal rewrite: FadeInUp 16px→0, 700ms ease-out cubic, fires once when ~10% visible & 40px above fold, delay map kept, reduced-motion respected; remove dead `Stagger`
-- [ ] Rotation-safe geometry (`useWindowDimensions`, no module-scope Dimensions)
+- [x] `npx expo install`: react-native-safe-area-context, @react-native-async-storage/async-storage, @react-native-community/netinfo, expo-file-system, expo-sharing, expo-blur, expo-splash-screen (+ react-native-svg, react-native-worklets per animate-expo skill; npm≥11 allow-scripts workaround from Step 3 notes reused)
+- [x] Add deps: `@expo-google-fonts/inter` (global Inter), `lucide-react-native` + `react-native-svg` (exact icon parity)
+- [x] Theme token fixes: dark bg `#0d1515`, mutedText `#4b4b4b`/`#bec6c6`, card `#192020`, contact-card `#161d1d`, border `#d4d4d4`, bands `#eee`/`#151d1d` (`src/theme.ts`; old keys kept so pre-Step-13 components still render)
+- [x] SafeArea insets wired (SafeAreaProvider at root); global font loading behind splash screen (`expo-splash-screen` prevent/hide, Inter 400–700 + JetBrains Mono in `src/fonts.ts`); StatusBar per scheme
+- [x] Scroll-context provider (`src/scroll.tsx`: UI-thread scrollY shared value; active-section derived in a worklet, `scheduleOnRN` only on change per animate-expo skill) feeding navbar shadow (>8px), 2px teal→cyan progress bar, active-section logic (top ≤160px) — bar/shadow land with the Step 13 navbar rewrite
+- [x] Reveal rewrite: FadeInUp 16px→0, 700ms ease-out cubic, fires once when ~10% visible & 40px above fold, delay map kept, reduced-motion respected (`useReducedMotion`); dead `Stagger` removed
+- [~] Rotation-safe geometry (`useWindowDimensions`, no module-scope Dimensions) — provider + App are rotation-safe; the one remaining module-scope `Dimensions` lives in WorkflowCarousel, which Step 13 deletes entirely (vertical stack rewrite)
 
 ## Step 13 — Mobile sections 1:1 port `[commit: feat(mobile): 1:1 section parity with web]`
 

@@ -14,3 +14,16 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Proactive Skill Usage:** Always review your available skills before planning or executing tasks.
 - **Automatic Invocation:** If any task or query even partially matches an available skill (e.g., framework patterns, testing, refactoring, database conventions), invoke that skill immediately using the skill tool without waiting for explicit user prompts.
 - **No Manual Confirmation:** Apply relevant skills silently and integrate their best practices directly into your workflow.
+
+
+# Project Instructions
+
+- always make a new branch for each new feature before starting to work on it
+
+
+# Git Instructions
+
+- you always use the name of the branch and put it as the commit message
+- you always push the branch to the remote repository after each commit
+- you always work on a branch and never on the main branch
+- after each feature is complete, you always make a pull request to the main branch

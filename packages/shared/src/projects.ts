@@ -31,7 +31,7 @@ const projects: Project[] = [
   {
     id: "iot-smart-office",
     title: "IoT Smart Office System",
-    techstack: ["ESP32", "MQTT", "React", "Node.js"],
+    techstack: ["Raspberry Pi", "MQTT", "Python", "Blynk"],
     link: "https://github.com/george-shenoda",
     image: "/assets/projects/iot-smart-office.png",
   },
