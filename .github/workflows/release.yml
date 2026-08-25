@@ -9,10 +9,6 @@ on:
 permissions:
   contents: write
 
-env:
-  # Setup files are built on every run; publishing to GitHub Releases only on tags.
-  IS_TAG: ${{ startsWith(github.ref, 'refs/tags/v') }}
-
 jobs:
   # Desktop builds (Windows .exe setup, macOS dmg, Linux AppImage/deb)
   desktop:
@@ -36,6 +32,9 @@ jobs:
         run: npm run build -w @portfolio/web
         env:
           ELECTRON_BUILD: 'true'
+          # Baked into the client bundle at build time; absent secrets degrade gracefully.
+          GOOGLE_ANALYTICS_ID: ${{ secrets.GOOGLE_ANALYTICS_ID }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
 
       - name: Assemble standalone bundle
         run: npm run assemble -w @portfolio/desktop
@@ -59,10 +58,11 @@ jobs:
           if [ -n "$APPLE_APP_SPECIFIC_PASSWORD_SECRET" ]; then echo "APPLE_APP_SPECIFIC_PASSWORD=$APPLE_APP_SPECIFIC_PASSWORD_SECRET" >> "$GITHUB_ENV"; fi
           if [ -n "$APPLE_TEAM_ID_SECRET" ]; then echo "APPLE_TEAM_ID=$APPLE_TEAM_ID_SECRET" >> "$GITHUB_ENV"; fi
 
-      - name: Package installers (publish only on tags)
-        run: npx electron-builder --publish ${{ env.IS_TAG == 'true' && 'always' || 'never' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Matrix jobs never publish directly — parallel uploads to one Release
+      # race on identical asset names (422 already_exists). The gated `release`
+      # job attaches all installer artifacts to the tag's Release instead.
+      - name: Package installers
+        run: npx electron-builder --publish never
 
       - name: Upload installer artifacts
         uses: actions/upload-artifact@v4
@@ -157,6 +157,19 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # GoogleService-Info.plist is intentionally untracked; injected from the
+      # GOOGLE_SERVICES_PLIST_B64 Actions secret when iOS builds are enabled.
+      - name: Restore GoogleService-Info.plist
+        if: env.HAS_EXPO_TOKEN == 'true' && env.ENABLE_IOS == 'true'
+        env:
+          PLIST_B64: ${{ secrets.GOOGLE_SERVICES_PLIST_B64 }}
+        run: |
+          if [ -z "$PLIST_B64" ]; then
+            echo "::error::Secret GOOGLE_SERVICES_PLIST_B64 is not set. Add it under Settings > Secrets and variables > Actions (base64 of apps/mobile/GoogleService-Info.plist)."
+            exit 1
+          fi
+          echo "$PLIST_B64" | base64 -d > apps/mobile/GoogleService-Info.plist
 
       - name: Setup Expo
         if: env.HAS_EXPO_TOKEN == 'true' && env.ENABLE_IOS == 'true'
