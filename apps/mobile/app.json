@@ -8,7 +8,8 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.georgeshenoda.portfolio"
+      "bundleIdentifier": "com.georgeshenoda.portfolio",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "package": "com.georgeshenoda.portfolio",
