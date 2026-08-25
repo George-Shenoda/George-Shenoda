@@ -1,73 +1,65 @@
-# Plan — Testing Suite (unit / integration / feature)
+# Plan — Desktop live projects + setup-file release workflow
 
-## Branch: feat/testing-suite
+## Branch: feat/desktop-live-projects
 
-Stack (already installed at root): `vitest@4` + `@vitest/coverage-v8`, `msw@2`, `jsdom`.
+Two deliverables in this feature (user-approved):
 
----
+### A. Desktop fetches projects live from the deployed website
 
-## 0. Infrastructure
+Currently the Electron desktop app serves `/api/projects` from its own bundled
+Next server, so new projects/images only appear after a tagged release. Make it
+load live like mobile already does:
 
-1. Root `vitest.config.ts` with two projects:
-   - `node` — all shared/web/mobile logic tests (default env)
-   - `jsdom` — browser-dependent tests only (`*.dom.test.ts`)
-   - `resolve.alias`: `@` → `apps/web` (matches web tsconfig paths)
-2. `tests/setup/msw.ts` — msw node server lifecycle (`beforeAll listen`, `afterEach resetHandlers`, `afterAll close`)
-3. Root scripts: `test`, `test:watch`, `test:coverage`
+1. `apps/web/components/web/projects.tsx`
+   - `const LIVE_BASE = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "")`
+   - Fetch `${LIVE_BASE}/api/projects`; on failure retry relative `/api/projects`
+     (preserves offline bundled-snapshot behavior)
+   - Resolve card images through `LIVE_BASE` (`<Image unoptimized>` already used,
+     so absolute URLs need no next.config changes)
+2. `apps/web/app/api/projects/route.ts`
+   - Add `Access-Control-Allow-Origin: *` (public read-only data; Electron window
+     origin is `http://127.0.0.1:<random-port>` → CORS otherwise blocks reading)
+3. Tests: extend `tests/integration/web/projects-route.test.ts` (CORS header)
+4. README: document that adding a project updates ALL platforms via site deploy;
+   tags are only needed for code releases
 
-## 1. Unit tests (pure logic, no network)
+### B. Release workflow produces installable setup files
 
-| File | Covers |
-|---|---|
-| `tests/unit/shared/data-invariants.test.ts` | `cv` shape (non-empty arrays, valid emails/URLs, unique ids), `projects` links match `https://…`, `theme` token presence |
-| `tests/unit/shared/index.test.ts` | Barrel exports full public API surface |
-| `tests/unit/shared/localstorage-storage.dom.test.ts` | `createLocalStorageStorage`: SSR guard, corrupt/non-array JSON tolerance, round-trip |
-| `tests/unit/web/sanitize.test.ts` | `escapeHtml` entity encoding (`& < > " '`), `stripCrlf` removes `\r\n` |
-| `tests/unit/web/rate-limit.test.ts` | Fixed-window counting, `count >= limit` boundary, window expiry (fake timers), key isolation, `getClientIp` header precedence (`x-forwarded-for` → `x-real-ip` → `unknown`) |
-| `tests/unit/web/utils.test.ts` | `cn()` conditionals, tailwind-merge last-wins |
-| `tests/unit/web/site.test.ts` | `NEXT_PUBLIC_SITE_URL` default/override (resetModules + stubEnv) |
-| `tests/unit/mobile/config.test.ts` | `resolveAssetUrl` absolute passthrough / relative prefix; `SITE_URL` trailing-slash strip |
-| `tests/unit/mobile/outbox-storage.test.ts` | `createAsyncStorageStorage` with mocked AsyncStorage: read fallback `[]`, corrupt JSON, write serialization |
+`.github/workflows/release.yml` gaps found while researching:
 
-## 2. Integration tests (module boundaries + seams)
+1. **Android bug**: job uses `--profile production`, but `eas.json` production
+   builds an **app-bundle (.aab)** while the workflow renames it `.apk`.
+   → Build with `--profile preview` (real `.apk`, per eas.json `preview.android.buildType: apk`)
+2. **macOS**: build both x64 and arm64 DMG/zip (runner default is arm64-only)
+3. **Desktop installers not uploaded as workflow artifacts** (only tag-publish).
+   → Upload NSIS Setup `.exe`, portable `.exe`, `.dmg`, `.zip`, `.AppImage`, `.deb`
+   via `actions/upload-artifact` so they exist even without publishing
+4. Add `workflow_dispatch` trigger to produce setup files on demand without a tag;
+   publish step runs `--publish always` only on tag pushes, else `--publish never`;
+   Release-creation job gated to tag pushes
 
-| File | Covers |
-|---|---|
-| `tests/integration/shared/contact-client.msw.test.ts` | Via msw: URL building (trailing `/` strip, `/api/contact` append), `{error}` JSON parse + status-text fallback, **`networkError:false` on HTTP errors vs `true` on fetch throw** (core retry contract) |
-| `tests/integration/shared/outbox.test.ts` | `add/list/pendingCount/clear`; flush: oldest-first, stops at first failure, increments `attempts`, records `lastError`, drops at `maxAttempts`, skips persistence when nothing changed |
-| `tests/integration/web/mailer.test.ts` | Nodemailer mocked: name/email/message validation branches, missing-creds error, auto-reply skipped iff `CONTACT_AUTO_REPLY === 'false'`, CRLF stripped from headers, `sendMail` args (`replyTo`, `from`, html content) |
-| `tests/integration/web/contact-route.test.ts` | Real `POST`/`OPTIONS` handlers, mailer mocked, real rate limiter: CORS origin allow/deny, `X-RateLimit-*` headers, 429, `content-length > 10240` → 413, bad JSON → 400, honeypot → 400, field length caps (100/254/5000), success/failure delegation |
-| `tests/integration/web/projects-route.test.ts` | `GET` → 200 + projects array payload |
+### Files to modify
 
-## 3. Feature tests (end-to-end user journeys)
+- `apps/web/components/web/projects.tsx`
+- `apps/web/app/api/projects/route.ts`
+- `tests/integration/web/projects-route.test.ts`
+- `.github/workflows/release.yml`
+- `README.md`
 
-| File | Journey |
-|---|---|
-| `tests/feature/offline-contact-queue.test.ts` | Network down → `submitContact` returns `networkError:true` → messages queued in outbox → network restored → `flush()` delivers both, storage persisted, `pendingCount === 0` |
-| `tests/feature/contact-api-journey.test.ts` | Real route + real rate limiter: valid human submit → 200 + email sent; bot honeypot → 400 spam; burst of 5 rapid submits → 429; window expires (fake timers) → allowed again |
-| `tests/feature/web/navbar-routing.dom.test.ts` | Cross-route nav sets `location.href = '/#id'`; same-route nav smooth-scrolls target element |
+### Out of scope
 
-## 4. Bugs surfaced while planning (fixes included in this branch — needs confirmation)
+- Code signing secrets (already wired via env passthrough, untouched)
+- iOS IPA flow (kept as-is; separate store distribution)
+- Removing dead `apps/mobile/assets/projects/` copies (separate cleanup)
 
-1. **`apps/web/lib/sanitize.ts` — `escapeHtml` is a no-op**: every char maps to *itself* (e.g. `.replace(/</g, '<')`). No HTML entity is ever produced. Fix: encode to `&amp; &lt; &gt; &quot; &#39;`. Tests are written against the corrected spec.
-2. **`packages/shared/src/projects.ts`** — `gstack-client-portal` link is `https:/gstack-ashen.vercel.app` (single slash). Fix URL; data-invariant test enforces `^https://`.
+### Verification
 
-## 5. Out of scope (deferred)
+- [ ] `npm test` green (incl. new CORS assertion)
+- [ ] web `typecheck`, `lint`, `build`
+- [ ] Workflow YAML sanity (`npm run` unaffected); actionlint not available — manual review
+- [ ] Manual desktop check optional (needs display): dev run shows live data
 
-- React Native component/hook tests (`scroll.tsx`, `theme-mode.tsx`) — reanimated/worklet mocking cost is high; prefer extracting pure logic later
-- Electron `main.mjs` — top-level side effects; needs refactor to extract testable helpers
-- E2E browser automation (Playwright)
+### Git workflow (per repo rules)
 
-## 6. Verification
-
-- [x] `npm test` (root) — 116/116 green
-- [x] `npm run test:coverage` — 99.4% statements / 95.5% branches
-- [x] `npm run typecheck:tests`
-- [x] Existing gates untouched: `npm run typecheck -w @portfolio/web`, `lint`, `build`
-- [x] Mobile `typecheck` still passes
-
-## 7. Git workflow (per project rules)
-
-- No commit until plan approved
-- Commit message = branch name (`feat/testing-suite`), push after each commit
-- PR to `main` after completion
+- Branch `feat/desktop-live-projects` from latest `origin/main`
+- Commit message = branch name, push after commit, PR → `main`
