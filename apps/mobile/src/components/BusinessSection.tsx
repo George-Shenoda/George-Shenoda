@@ -1,6 +1,7 @@
 import { Text, View } from 'react-native';
+import { CheckCircle } from 'lucide-react-native';
 import Reveal from './Reveal';
-import type { Palette } from '../theme';
+import { usePalette } from '../theme-mode';
 
 const points = [
   'Automated Email Workflows & Notifications',
@@ -8,53 +9,39 @@ const points = [
   'Third-party API Interfacing & Webhooks',
 ];
 
-function BusinessSection({ palette }: { palette: Palette }) {
+function BusinessSection() {
+  const palette = usePalette();
+
   return (
-    <View style={{ paddingVertical: 72, paddingHorizontal: 24, gap: 16 }}>
+    <View style={{ paddingVertical: 96, paddingHorizontal: 16, gap: 48 }}>
       <Reveal>
         <Text
           style={{
             color: palette.text,
-            fontSize: 28,
+            fontSize: 30,
             fontWeight: '700',
+            marginBottom: 16,
           }}
         >
-          Business Automation & Optimization
+          Business Automation &amp; Optimization
         </Text>
-      </Reveal>
-      <Reveal delay={100}>
-        <Text style={{ color: palette.mutedText, fontSize: 14, lineHeight: 22 }}>
+        <Text style={{ color: palette.mutedText, fontSize: 16, lineHeight: 26 }}>
           Beyond standard web interfaces, I engineer automated workflows that
           eliminate manual tasks. By leveraging Node.js and integrating custom
           APIs, I connect disparate business tools into unified, real-time
           systems.
         </Text>
-      </Reveal>
-      <View style={{ gap: 12, marginTop: 8 }}>
-        {points.map((point, index) => (
-          <Reveal key={point} delay={200 + index * 100}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <View
-                style={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: 999,
-                  backgroundColor: `${palette.primary}26`,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Text style={{ color: palette.primary, fontSize: 12 }}>✓</Text>
-              </View>
-              <Text
-                style={{ color: palette.text, fontSize: 13, fontWeight: '500', flex: 1 }}
-              >
+        <View style={{ marginTop: 32, gap: 16 }}>
+          {points.map((point) => (
+            <View key={point} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <CheckCircle size={20} color={palette.primary} />
+              <Text style={{ color: palette.text, fontSize: 16, fontWeight: '500', flex: 1 }}>
                 {point}
               </Text>
             </View>
-          </Reveal>
-        ))}
-      </View>
+          ))}
+        </View>
+      </Reveal>
     </View>
   );
 }
