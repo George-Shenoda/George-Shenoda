@@ -18,7 +18,7 @@ const projects: Project[] = [
     id: "gstack-client-portal",
     title: "GStack Client Portal",
     techstack: ["Next.js", "Node.js", "Nodemailer", "MongoDB"],
-    link: "https:/gstack-ashen.vercel.app",
+    link: "https://gstack-ashen.vercel.app",
     image: "/assets/projects/gstack-client-portal.png",
   },
   {

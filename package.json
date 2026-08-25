@@ -20,11 +20,19 @@
     "cv:pdf": "node scripts/make-cv-pdf.mjs",
     "desktop:dev": "npm run dev -w @portfolio/desktop",
     "desktop:build": "cross-env ELECTRON_BUILD=true npm run build -w @portfolio/web && npm run assemble -w @portfolio/desktop",
-    "desktop:dist": "npm run desktop:build && electron-builder"
+    "desktop:dist": "npm run desktop:build && electron-builder",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck:tests": "tsc -p tsconfig.json"
   },
   "devDependencies": {
     "@resvg/resvg-js": "^2.6.2",
+    "@vitest/coverage-v8": "^4.1.11",
+    "jsdom": "^30.0.1",
+    "msw": "^2.15.0",
     "png-to-ico": "^3.0.2",
-    "pngjs": "^7.0.0"
+    "pngjs": "^7.0.0",
+    "vitest": "^4.1.11"
   }
 }
