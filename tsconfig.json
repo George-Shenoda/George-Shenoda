@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@/*": ["./apps/web/*"],
+      "@mobile/*": ["./apps/mobile/src/*"],
+      "@portfolio/shared": ["./packages/shared/src/index.ts"]
+    }
+  },
+  "include": ["tests/**/*.ts", "vitest.config.ts"]
+}
