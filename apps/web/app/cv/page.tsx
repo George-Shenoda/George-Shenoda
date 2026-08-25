@@ -3,6 +3,7 @@ import Link from "next/link";
 import { cv } from "@portfolio/shared";
 import { SITE_URL } from "@/lib/site";
 import PrintButton from "@/components/web/PrintButton";
+import { BackButton } from "@/components/web/BackButton";
 
 export const metadata: Metadata = {
     title: "CV",
@@ -13,14 +14,13 @@ export const metadata: Metadata = {
     },
 };
 
-const labelClass =
-    "text-[11px] font-semibold uppercase tracking-[0.18em] text-[#0f7173]";
+const labelClass = "text-[11px] font-semibold uppercase tracking-[0.18em] text-primary";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
     return (
         <div className="mb-3 flex items-center gap-3">
             <span className={labelClass}>{children}</span>
-            <span aria-hidden className="h-px flex-1 bg-[#d6d3cb]" />
+            <span aria-hidden className="h-px flex-1 bg-border" />
         </div>
     );
 }
@@ -29,20 +29,21 @@ export default function CvPage() {
     const { profile, links, summary, experience, education, projects, skillGroups, certifications, languages } = cv;
 
     return (
-        <div className="cv-page min-h-screen w-full bg-[#e9e7e2] py-6 print:bg-white print:py-0">
+        <div className="cv-page min-h-screen w-full bg-muted py-6 print:bg-background print:py-0">
+            <BackButton />
             <PrintButton />
-            <article className="cv-sheet mx-auto w-full max-w-[210mm] bg-[#faf9f7] px-[9mm] py-[10mm] text-[#171717] shadow-xl sm:px-[16mm] sm:py-[14mm] print:max-w-none print:px-[16mm] print:py-[14mm] print:shadow-none">
+            <article className="cv-sheet mx-auto w-full max-w-[210mm] bg-card px-[9mm] py-[10mm] text-card-foreground shadow-xl sm:px-[16mm] sm:py-[14mm] print:max-w-none print:px-[16mm] print:py-[14mm] print:shadow-none">
                 <header className="break-inside-avoid">
                     <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
                         {profile.name}
                     </h1>
-                    <p className="mt-2 text-base font-medium text-[#0f7173] sm:text-lg">
+                    <p className="mt-2 text-base font-medium text-primary sm:text-lg">
                         {profile.headline}
                     </p>
-                    <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[#525252]">
+                    <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
                         <span>{profile.location}</span>
                         <span aria-hidden>·</span>
-                        <a href={`mailto:${profile.email}`} className="hover:text-[#0f7173] hover:underline">
+                        <a href={`mailto:${profile.email}`} className="hover:text-primary hover:underline">
                             {profile.email}
                         </a>
                         {links.map(({ label, href }) => (
@@ -52,7 +53,7 @@ export default function CvPage() {
                                     href={href}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="hover:text-[#0f7173] hover:underline"
+                                    className="hover:text-primary hover:underline"
                                 >
                                     {label}
                                 </a>
@@ -62,7 +63,7 @@ export default function CvPage() {
                             <span aria-hidden>·</span>
                             <Link
                                 href="/"
-                                className="hover:text-[#0f7173] hover:underline"
+                                className="hover:text-primary hover:underline"
                             >
                                 Portfolio
                             </Link>
@@ -71,7 +72,7 @@ export default function CvPage() {
                 </header>
 
                 <section aria-label="Summary" className="mt-8 break-inside-avoid">
-                    <p className="max-w-[65ch] text-[15px] leading-relaxed text-[#333]">
+                    <p className="max-w-[65ch] text-[15px] leading-relaxed text-foreground">
                         {summary}
                     </p>
                 </section>
@@ -84,16 +85,16 @@ export default function CvPage() {
                                 <div className="flex flex-wrap items-baseline justify-between gap-x-4">
                                     <h3 className="text-base font-bold">
                                         {entry.role}
-                                        <span className="font-medium text-[#525252]">
+                                        <span className="font-medium text-muted-foreground">
                                             {" "}
                                             — {entry.company}
                                         </span>
                                     </h3>
-                                    <p className="font-mono text-[13px] text-[#525252]">
+                                    <p className="font-mono text-[13px] text-muted-foreground">
                                         {entry.period}
                                     </p>
                                 </div>
-                                <ul className="mt-1.5 list-disc space-y-1 pl-5 text-[14px] leading-relaxed text-[#333]">
+                                <ul className="mt-1.5 list-disc space-y-1 pl-5 text-[14px] leading-relaxed text-foreground">
                                     {entry.highlights.map((highlight) => (
                                         <li key={highlight}>{highlight}</li>
                                     ))}
@@ -115,7 +116,7 @@ export default function CvPage() {
                                                 href={project.link}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="hover:text-[#0f7173] hover:underline"
+                                                className="hover:text-primary hover:underline"
                                             >
                                                 {project.name}
                                             </a>
@@ -123,11 +124,11 @@ export default function CvPage() {
                                             project.name
                                         )}
                                     </h3>
-                                    <p className="font-mono text-[12px] text-[#525252]">
+                                    <p className="font-mono text-[12px] text-muted-foreground">
                                         {project.techstack.join(" · ")}
                                     </p>
                                 </div>
-                                <p className="mt-0.5 text-[14px] leading-relaxed text-[#333]">
+                                <p className="mt-0.5 text-[14px] leading-relaxed text-foreground">
                                     {project.description}
                                 </p>
                             </div>
@@ -141,12 +142,12 @@ export default function CvPage() {
                         <div key={entry.degree} className="flex flex-wrap items-baseline justify-between gap-x-4">
                             <h3 className="text-[15px] font-bold">
                                 {entry.degree}
-                                <span className="font-medium text-[#525252]">
+                                <span className="font-medium text-muted-foreground">
                                     {" "}
                                     — {entry.school}
                                 </span>
                             </h3>
-                            <p className="font-mono text-[13px] text-[#525252]">
+                            <p className="font-mono text-[13px] text-muted-foreground">
                                 {entry.period}
                             </p>
                         </div>
@@ -158,10 +159,10 @@ export default function CvPage() {
                     <dl className="grid grid-cols-1 gap-x-8 gap-y-2 text-[14px] leading-relaxed sm:grid-cols-2">
                         {skillGroups.map((group) => (
                             <div key={group.label} className="flex gap-2">
-                                <dt className="min-w-32 font-semibold text-[#171717]">
+                                <dt className="min-w-32 font-semibold text-foreground">
                                     {group.label}
                                 </dt>
-                                <dd className="text-[#333]">{group.items.join(", ")}</dd>
+                                <dd className="text-foreground">{group.items.join(", ")}</dd>
                             </div>
                         ))}
                     </dl>
@@ -176,8 +177,8 @@ export default function CvPage() {
                         <ul className="flex flex-col gap-1.5 text-[14px] leading-relaxed">
                             {certifications.map((certification) => (
                                 <li key={certification.title}>
-                                    <span className="font-semibold">{certification.title}</span>
-                                    <span className="text-[#525252]">
+                                    <span className="font-semibold text-foreground">{certification.title}</span>
+                                    <span className="text-muted-foreground">
                                         {" "}
                                         — {certification.issuer} {certification.year}
                                     </span>
@@ -190,15 +191,15 @@ export default function CvPage() {
                         <ul className="flex flex-col gap-1.5 text-[14px] leading-relaxed">
                             {languages.map((language) => (
                                 <li key={language.name}>
-                                    <span className="font-semibold">{language.name}</span>
-                                    <span className="text-[#525252]"> — {language.level}</span>
+                                    <span className="font-semibold text-foreground">{language.name}</span>
+                                    <span className="text-muted-foreground"> — {language.level}</span>
                                 </li>
                             ))}
                         </ul>
                     </div>
                 </section>
 
-                <footer className="mt-10 break-inside-avoid border-t border-[#d6d3cb] pt-3 text-[11px] text-[#7a7a74]">
+                <footer className="mt-10 break-inside-avoid border-t border-border pt-3 text-[11px] text-muted-foreground">
                     <p>
                         {profile.name} — {profile.headline}. Latest version always at{" "}
                         {SITE_URL}/cv

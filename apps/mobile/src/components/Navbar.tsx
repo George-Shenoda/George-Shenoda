@@ -17,6 +17,7 @@ import { useScroll, type Section } from '../scroll';
 type NavbarProps = {
   onNavigate: (section: Section) => void;
   onScrollTop: () => void;
+  onHome: () => void;
 };
 
 const NAV_LINKS: Array<{ id: Section; label: string }> = [
@@ -37,7 +38,7 @@ const menuEntering = new Keyframe({
   100: { opacity: 1, transform: [{ scale: 1 }, { translateY: 0 }] },
 }).duration(100);
 
-function Navbar({ onNavigate, onScrollTop }: NavbarProps) {
+function Navbar({ onNavigate, onScrollTop, onHome }: NavbarProps) {
   const palette = usePalette();
   const { scheme, preference, setPreference } = useThemeMode();
   const { scrollY, viewportHeight, contentHeight, activeSection } = useScroll();
@@ -116,7 +117,7 @@ function Navbar({ onNavigate, onScrollTop }: NavbarProps) {
             justifyContent: 'space-between',
           }}
         >
-          <Pressable onPress={onScrollTop} hitSlop={8} accessibilityRole="button">
+          <Pressable onPress={onHome} hitSlop={8} accessibilityRole="button">
             <Text
               style={{ color: palette.primary, fontSize: 20, fontWeight: '700' }}
             >

@@ -32,6 +32,7 @@ function TitleBar() {
           width: `env(titlebar-area-width, 100%)`,
           marginLeft: `env(titlebar-area-x, 0)`,
           WebkitAppRegion: 'drag',
+          '--titlebar-height': `env(titlebar-area-height, ${OVERLAY_FALLBACK_HEIGHT}px)`,
         } as React.CSSProperties}
       >
         <span className="text-xs font-mono tracking-widest uppercase">

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import {
     DropdownMenu,
@@ -19,9 +20,24 @@ const NAV_LINKS = [
 ] as const;
 
 function Navbar() {
+    const pathname = usePathname();
+    const router = useRouter();
     const [activeSection, setActiveSection] = useState<string>("");
     const [scrolled, setScrolled] = useState(false);
     const [progress, setProgress] = useState(0);
+    const [isDesktop, setIsDesktop] = useState(false);
+    const [titlebarHeight, setTitlebarHeight] = useState(0);
+
+    // Detect desktop mode once on mount
+    useEffect(() => {
+        const desktop = window.electronAPI?.isDesktop === true;
+        if (desktop) {
+            const height = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--titlebar-height')) || 40;
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setTitlebarHeight(height);
+        }
+        setIsDesktop(desktop);
+    }, []);
 
     useEffect(() => {
         const update = () => {
@@ -59,15 +75,18 @@ function Navbar() {
         };
     }, []);
 
+    const topOffset = isDesktop ? titlebarHeight : 0;
+
     return (
         <header
-            className={`sticky top-0 z-40 transition-shadow duration-300 ${
+            className={`sticky transition-shadow duration-300 z-40 ${
                 scrolled ? "shadow-md shadow-black/5 dark:shadow-black/30" : ""
             } dark:bg-[#151d1dee] bg-[#eeeeeef2] backdrop-blur-md`}
+            style={{ top: topOffset }}
         >
             <div className="px-4 py-4 sm:py-5 flex justify-between items-center">
                 <button
-                    onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                    onClick={() => router.push("/")}
                     className="text-xl sm:text-2xl font-bold text-primary cursor-pointer"
                 >
                     George Shenoda
@@ -76,7 +95,7 @@ function Navbar() {
                     {NAV_LINKS.map(({ id, label }) => (
                         <button
                             key={id}
-                            onClick={() => scrollToView(id)}
+                            onClick={() => scrollToView(id, pathname)}
                             aria-current={activeSection === id ? "true" : undefined}
                             className={`relative cursor-pointer text-[15px] font-medium transition-all hover:text-primary ${
                                 activeSection === id ? "text-primary" : "text-foreground/80"
@@ -93,10 +112,11 @@ function Navbar() {
                 </nav>
                 <div className="flex items-center gap-2">
                     <ThemeSwitcher />
-                    <Button
+<Button
                         variant="ghost"
                         className="hidden h-11 rounded-full px-4 text-[15px] font-medium text-foreground/80 hover:text-primary sm:inline-flex"
                         render={<Link href="/cv" />}
+                        nativeButton={false}
                     >
                         View CV
                     </Button>
@@ -127,7 +147,7 @@ function Navbar() {
                             {NAV_LINKS.map(({ id, label }) => (
                                 <DropdownMenuItem
                                     key={id}
-                                    onClick={() => scrollToView(id)}
+                                    onClick={() => scrollToView(id, pathname)}
                                     className={`text-base ${activeSection === id ? "text-primary font-semibold" : ""}`}
                                 >
                                     {label}
