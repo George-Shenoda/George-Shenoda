@@ -23,7 +23,7 @@ import { ChevronDown, FileDown, FileText } from 'lucide-react-native';
 import Reveal from './Reveal';
 import PressableScale from './PressableScale';
 import { fontFamily } from '../fonts';
-import { usePalette } from '../theme-mode';
+import { usePalette, useThemeMode } from '../theme-mode';
 import type { Section } from '../scroll';
 
 type HeroProps = {
@@ -44,33 +44,37 @@ const capabilities = [
 
 function Hero({ onNavigate, onDownloadCv, onViewCv }: HeroProps) {
   const palette = usePalette();
+  const { scheme } = useThemeMode();
 
   return (
     <View style={{ overflow: 'hidden' }}>
-      {/* Glow ellipse: web blur-[110px] primary/10·/20 disc approximated with a
-          radial gradient fade — no per-frame cost, no real blur needed. */}
-      <View
-        pointerEvents="none"
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 384,
-          alignItems: 'center',
-        }}
-      >
-        <Svg width="100%" height="384" style={{ maxWidth: 544 }}>
-          <Defs>
-            <RadialGradient id="glow" cx="50%" cy="50%" rx="50%" ry="50%">
-              <Stop offset="0" stopColor={palette.glow} stopOpacity="1" />
-              <Stop offset="0.55" stopColor={palette.glow} stopOpacity="0.45" />
-              <Stop offset="1" stopColor={palette.glow} stopOpacity="0" />
-            </RadialGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#glow)" />
-        </Svg>
-      </View>
+      {/* Glow ellipse: web blur-[110px] primary/10·/20 disc — only in dark mode. */}
+      {scheme === 'dark' && (
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 440,
+            alignItems: 'center',
+          }}
+        >
+          <Svg width="100%" height="440" style={{ maxWidth: 640 }}>
+            <Defs>
+              <RadialGradient id="glow" cx="50%" cy="40%" rx="55%" ry="60%">
+                <Stop offset="0" stopColor={palette.glow} stopOpacity="1" />
+                <Stop offset="0.35" stopColor={palette.glow} stopOpacity="0.6" />
+                <Stop offset="0.6" stopColor={palette.glow} stopOpacity="0.25" />
+                <Stop offset="0.85" stopColor={palette.glow} stopOpacity="0.08" />
+                <Stop offset="1" stopColor={palette.glow} stopOpacity="0" />
+              </RadialGradient>
+            </Defs>
+            <Rect x="0" y="0" width="100%" height="100%" fill="url(#glow)" />
+          </Svg>
+        </View>
+      )}
 
       {/* 28px dot grid masked by a radial ellipse (60% 65% at 50% 30%). */}
       <Svg
