@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 function Footer() {
     return (
         <footer className="flex flex-col sm:flex-row justify-between items-center gap-4 w-full px-8 py-8 dark:bg-[#151d1d] bg-[#eee]">
@@ -9,14 +11,15 @@ function Footer() {
                     { href: "#workflow", label: "Workflow" },
                     { href: "#projects", label: "Projects" },
                     { href: "#contact", label: "Contact" },
+                    { href: "/privacy", label: "Privacy" },
                 ].map(({ href, label }) => (
-                    <a
+                    <Link
                         key={href}
                         href={href}
                         className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
                     >
                         {label}
-                    </a>
+                    </Link>
                 ))}
             </nav>
             <div className="text-sm text-muted-foreground">

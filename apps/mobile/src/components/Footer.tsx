@@ -4,6 +4,7 @@ import type { Section } from '../scroll';
 
 type FooterProps = {
   onNavigate: (section: Section) => void;
+  onNavigateToPrivacy: () => void;
 };
 
 const links: Array<{ label: string; section: Section }> = [
@@ -12,7 +13,7 @@ const links: Array<{ label: string; section: Section }> = [
   { label: 'Contact', section: 'contact' },
 ];
 
-function Footer({ onNavigate }: FooterProps) {
+function Footer({ onNavigate, onNavigateToPrivacy }: FooterProps) {
   const palette = usePalette();
 
   return (
@@ -44,6 +45,16 @@ function Footer({ onNavigate }: FooterProps) {
             </Text>
           </Pressable>
         ))}
+        <Pressable
+          onPress={onNavigateToPrivacy}
+          hitSlop={8}
+          accessibilityRole="link"
+          style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+        >
+          <Text style={{ color: palette.mutedText, fontSize: 14, fontWeight: '500' }}>
+            Privacy
+          </Text>
+        </Pressable>
       </View>
       <Text style={{ color: palette.mutedText, fontSize: 14 }}>
         © {new Date().getFullYear()} George Shenoda. All rights reserved.
