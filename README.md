@@ -42,6 +42,7 @@ cp apps/web/.env.example apps/web/.env
 | `EMAIL_PASS` | yes (contact form) | Gmail app password |
 | `NEXT_PUBLIC_SITE_URL` | yes | Public site URL; mobile/desktop apps use it to reach `/api/contact` and `/api/projects` |
 | `CONTACT_AUTO_REPLY` | no | Set to `false` to disable auto-reply emails |
+| `NEXT_PUBLIC_GA_ID` | no | Google Analytics 4 measurement ID; defaults to `G-JMPFJDFM5T` in code |
 
 ## Development
 
