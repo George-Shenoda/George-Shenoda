@@ -63,3 +63,7 @@ apps/mobile/dist
 # Firebase configs (injected via CI secret GOOGLE_SERVICES_JSON_B64; never commit)
 apps/mobile/google-services.json
 **/GoogleService-Info.plist
+
+# generated native projects (expo prebuild output)
+apps/mobile/android/
+apps/mobile/ios/
