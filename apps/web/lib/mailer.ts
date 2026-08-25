@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { escapeHtml, stripCrlf } from './sanitize';
 
 export type ContactFormState = {
   success?: boolean;
@@ -8,6 +9,9 @@ export type ContactFormState = {
 };
 
 function buildContactEmailHtml(name: string, email: string, message: string) {
+  const safeName = escapeHtml(name);
+  const safeEmail = escapeHtml(email);
+  const safeMessage = escapeHtml(message);
   return `
     <!DOCTYPE html>
     <html>
@@ -90,18 +94,18 @@ function buildContactEmailHtml(name: string, email: string, message: string) {
           </div>
           <div class="field">
             <div class="label">Sender Name</div>
-            <div class="value">${name}</div>
+            <div class="value">${safeName}</div>
           </div>
           <div class="field">
             <div class="label">Email Address</div>
-            <div class="value"><a href="mailto:${email}" style="color: #0284c7; text-decoration: none;">${email}</a></div>
+            <div class="value"><a href="mailto:${safeEmail}" style="color: #0284c7; text-decoration: none;">${safeEmail}</a></div>
           </div>
           <div class="field">
             <div class="label">Message</div>
-            <div class="message-box">${message}</div>
+            <div class="message-box">${safeMessage}</div>
           </div>
           <div class="footer">
-            Hit "Reply" in your email client to respond directly to ${name} (${email}).
+            Hit "Reply" in your email client to respond directly to ${safeName} (${safeEmail}).
           </div>
         </div>
       </body>
@@ -110,6 +114,9 @@ function buildContactEmailHtml(name: string, email: string, message: string) {
 }
 
 function buildAutoReplyHtml(name: string, email: string, fromEmail: string | undefined) {
+  const safeName = escapeHtml(name);
+  const safeEmail = escapeHtml(email);
+  const safeFromEmail = escapeHtml(fromEmail ?? '');
   return `
     <!DOCTYPE html>
     <html>
@@ -182,15 +189,15 @@ function buildAutoReplyHtml(name: string, email: string, fromEmail: string | und
           </div>
           <div class="field">
             <div class="label">To</div>
-            <div class="value">${email}</div>
+            <div class="value">${safeEmail}</div>
           </div>
           <div class="field">
             <div class="label">From</div>
-            <div class="value">${fromEmail ?? ''}</div>
+            <div class="value">${safeFromEmail}</div>
           </div>
           <div class="field">
             <div class="label">Regarding</div>
-            <div class="value">${name} (${email})</div>
+            <div class="value">${safeName} (${safeEmail})</div>
           </div>
           <div class="field">
             <div class="label">Message</div>
@@ -255,7 +262,7 @@ export async function sendContactEmail(formData: {
       },
     });
 
-    const sanitizedName = name.trim();
+    const sanitizedName = stripCrlf(name.trim());
     const sanitizedEmail = email.trim();
     const sanitizedMessage = message.trim();
 
@@ -284,8 +291,6 @@ export async function sendContactEmail(formData: {
     return { success: true };
   } catch (err: unknown) {
     console.error('Nodemailer error:', err);
-    const message =
-      err instanceof Error ? err.message : 'An unexpected error occurred while sending the email.';
-    return { success: false, error: message };
+    return { success: false, error: 'Failed to send message. Please try again later.' };
   }
 }

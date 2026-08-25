@@ -14,20 +14,55 @@ import Reveal from './Reveal';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://localhost:3000';
 const OUTBOX_KEY = 'portfolio-contact-outbox';
+const COOLDOWN_MS = 10_000;
 
 export default function Contact() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     message: '',
+    website: '',
   });
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error' | 'queued'>('idle');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error' | 'queued' | 'cooldown'>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [queuedCount, setQueuedCount] = useState(0);
+  const [cooldownUntil, setCooldownUntil] = useState<number>(0);
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
   const outboxRef = useRef<Outbox | null>(null);
+  const cooldownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const isDesktop =
     typeof window !== 'undefined' && window.electronAPI?.isDesktop === true;
+
+  // Cooldown countdown interval
+  useEffect(() => {
+    if (status === 'cooldown' && cooldownUntil > 0) {
+      const now = Date.now();
+      const remaining = Math.ceil((cooldownUntil - now) / 1000);
+      if (remaining > 0) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setCooldownRemaining(remaining);
+        cooldownIntervalRef.current = setInterval(() => {
+          const now2 = Date.now();
+          const rem = Math.ceil((cooldownUntil - now2) / 1000);
+          if (rem > 0) {
+            setCooldownRemaining(rem);
+          } else {
+            setCooldownRemaining(0);
+            setStatus('idle');
+            setCooldownUntil(0);
+            if (cooldownIntervalRef.current) clearInterval(cooldownIntervalRef.current);
+          }
+        }, 1000);
+      } else {
+        setStatus('idle');
+        setCooldownUntil(0);
+      }
+    }
+    return () => {
+      if (cooldownIntervalRef.current) clearInterval(cooldownIntervalRef.current);
+    };
+  }, [status, cooldownUntil]);
 
   // Desktop only: keep an offline outbox and flush it on reconnect/launch.
   useEffect(() => {
@@ -65,6 +100,7 @@ export default function Contact() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (status === 'cooldown') return;
     setStatus('loading');
     setErrorMessage('');
 
@@ -77,13 +113,15 @@ export default function Contact() {
 
       if (result.success) {
         setStatus('success');
-        setFormData({ name: '', email: '', message: '' });
+        const until = Date.now() + COOLDOWN_MS;
+        setCooldownUntil(until);
+        setFormData({ name: '', email: '', message: '', website: '' });
       } else if (result.networkError && outboxRef.current) {
         // Offline: queue locally and auto-send when connectivity returns.
         await outboxRef.current.add(formData);
         setQueuedCount(await outboxRef.current.pendingCount());
         setStatus('queued');
-        setFormData({ name: '', email: '', message: '' });
+        setFormData({ name: '', email: '', message: '', website: '' });
       } else {
         setStatus('error');
         setErrorMessage(result.error || 'Something went wrong. Please try again.');
@@ -94,6 +132,8 @@ export default function Contact() {
       setErrorMessage('Failed to send message. Please check your connection and try again.');
     }
   };
+
+    const isFormDisabled = status === 'loading' || status === 'cooldown';
 
     return (
         <div id="contact" className="w-full flex items-center justify-center p-6 sm:p-10 dark:bg-[#151d1d] bg-[#eee]">
@@ -141,6 +181,12 @@ export default function Contact() {
                 </span>
               </div>
             )}
+            {status === 'cooldown' && (
+              <div className="flex items-center gap-3 p-4 mb-2 rounded-xl bg-primary/10 border border-primary/25 text-primary text-sm font-medium animate-in fade-in duration-200">
+                <Loader2 className="size-5 animate-spin shrink-0" />
+                <span>Please wait {cooldownRemaining}s before sending another message.</span>
+              </div>
+            )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -156,7 +202,7 @@ export default function Contact() {
                   onChange={handleChange}
                   placeholder="Your Name"
                   required
-                  disabled={status === 'loading'}
+                  disabled={isFormDisabled}
                   className="w-full p-3 text-base border border-gray-300 dark:border-gray-600 bg-transparent focus:border-primary focus:ring-1 focus:ring-primary outline-none rounded-xl transition duration-200 placeholder:text-muted-foreground/60 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
@@ -173,7 +219,7 @@ export default function Contact() {
                   onChange={handleChange}
                   placeholder="your.email@example.com"
                   required
-                  disabled={status === 'loading'}
+                  disabled={isFormDisabled}
                   className="w-full p-3 text-base border border-gray-300 dark:border-gray-600 bg-transparent focus:border-primary focus:ring-1 focus:ring-primary outline-none rounded-xl transition duration-200 placeholder:text-muted-foreground/60 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
@@ -191,21 +237,44 @@ export default function Contact() {
                 placeholder="Tell me about your project, timeline, or question..."
                 rows={5}
                 required
-                disabled={status === 'loading'}
+                disabled={isFormDisabled}
                 className="w-full p-3 text-base border border-gray-300 dark:border-gray-600 bg-transparent focus:border-primary focus:ring-1 focus:ring-primary outline-none rounded-xl transition duration-200 resize-y min-h-[120px] placeholder:text-muted-foreground/60 disabled:opacity-50 disabled:cursor-not-allowed"
               ></textarea>
             </div>
 
+            {/* Honeypot field - hidden from humans, filled by bots */}
+            <input
+              type="text"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+              style={{
+                display: 'none',
+                opacity: 0,
+                position: 'absolute',
+                left: -9999,
+                pointerEvents: 'none',
+              }}
+              value={formData.website}
+              onChange={handleChange}
+              aria-hidden="true"
+            />
+
             <div className="flex flex-col items-center gap-3 pt-2">
               <Button
                 type="submit"
-                disabled={status === 'loading'}
+                disabled={isFormDisabled}
                 className="cursor-pointer w-full sm:w-auto px-10 py-6 h-auto bg-linear-to-br from-primary to-secondary text-base text-white font-semibold shadow-lg shadow-primary/30 transition-all duration-300 hover:scale-[1.03] hover:shadow-xl hover:shadow-primary/25 active:scale-[0.98] disabled:opacity-70 disabled:hover:translate-y-0"
               >
                 {status === 'loading' ? (
                   <>
                     <Loader2 className="size-5 animate-spin mr-2" />
                     Sending Message...
+                  </>
+                ) : status === 'cooldown' ? (
+                  <>
+                    <Loader2 className="size-5 animate-spin mr-2" />
+                    Wait {cooldownRemaining}s...
                   </>
                 ) : (
                   <>
