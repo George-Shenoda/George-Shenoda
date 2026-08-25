@@ -19,6 +19,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 # Project Instructions
 
 - always make a new branch for each new feature before starting to work on it
+- before any change to the code make plan.md file at the root of the project and don't make a commit until the plan is approved
+- after the plan is approved, you can start working on the feature
+- after the feature is complete, you always make a pull request to the main branch
 
 
 # Git Instructions
