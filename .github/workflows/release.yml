@@ -104,12 +104,15 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-  # iOS build (skipped unless EXPO_TOKEN secret is set)
+  # iOS build — disabled until Apple signing credentials are configured in Expo
+  # (run `eas credentials` locally or add an App Store Connect API key on expo.dev,
+  # then flip ENABLE_IOS to 'true')
   ios:
     name: iOS
     runs-on: macos-latest
     env:
       HAS_EXPO_TOKEN: ${{ secrets.EXPO_TOKEN != '' }}
+      ENABLE_IOS: 'false'
     steps:
       - uses: actions/checkout@v4
 
@@ -122,7 +125,7 @@ jobs:
         run: npm ci
 
       - name: Setup Expo
-        if: env.HAS_EXPO_TOKEN == 'true'
+        if: env.HAS_EXPO_TOKEN == 'true' && env.ENABLE_IOS == 'true'
         uses: expo/expo-github-action@v8
         with:
           expo-version: latest
@@ -130,7 +133,7 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Build iOS app and download IPA
-        if: env.HAS_EXPO_TOKEN == 'true'
+        if: env.HAS_EXPO_TOKEN == 'true' && env.ENABLE_IOS == 'true'
         working-directory: apps/mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -141,7 +144,7 @@ jobs:
           curl -fL "$ARTIFACT_URL" -o app-release.ipa
 
       - name: Upload iOS artifact
-        if: env.HAS_EXPO_TOKEN == 'true'
+        if: env.HAS_EXPO_TOKEN == 'true' && env.ENABLE_IOS == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ios-ipa
