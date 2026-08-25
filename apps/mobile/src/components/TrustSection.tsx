@@ -1,13 +1,15 @@
 import { Text, View } from 'react-native';
 import { CalendarCheck, FileText, KeyRound } from 'lucide-react-native';
-import { projects } from '@portfolio/shared';
 import Card from './Card';
 import Reveal from './Reveal';
 import { fontFamily } from '../fonts';
 import { usePalette } from '../theme-mode';
 
+type TrustSectionProps = {
+  projectsCount: number;
+};
+
 const stats = [
-  { value: `${projects.length}+`, label: 'Projects delivered' },
   { value: '24h', label: 'Response time' },
   { value: '100%', label: 'Code ownership, yours' },
 ];
@@ -40,7 +42,7 @@ const cards = [
 ];
 
 /** Raw-background trust strip between the banded sections (web section order parity). */
-function TrustSection() {
+function TrustSection({ projectsCount }: TrustSectionProps) {
   const palette = usePalette();
 
   return (
@@ -92,6 +94,22 @@ function TrustSection() {
             rowGap: 32,
           }}
         >
+          <View style={{ alignItems: 'center', gap: 4 }}>
+            <Text
+              style={{
+                color: palette.primary,
+                fontFamily: fontFamily.mono,
+                fontSize: 36,
+                fontWeight: '700',
+                fontVariant: ['tabular-nums'],
+              }}
+            >
+              {projectsCount}+
+            </Text>
+            <Text style={{ color: palette.mutedText, fontSize: 16, fontWeight: '500' }}>
+              Projects delivered
+            </Text>
+          </View>
           {stats.map(({ value, label }) => (
             <View key={label} style={{ alignItems: 'center', gap: 4 }}>
               <Text
@@ -105,9 +123,7 @@ function TrustSection() {
               >
                 {value}
               </Text>
-              <Text
-                style={{ color: palette.mutedText, fontSize: 16, fontWeight: '500' }}
-              >
+              <Text style={{ color: palette.mutedText, fontSize: 16, fontWeight: '500' }}>
                 {label}
               </Text>
             </View>

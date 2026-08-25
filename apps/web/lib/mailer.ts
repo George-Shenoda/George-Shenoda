@@ -269,13 +269,17 @@ export async function sendContactEmail(formData: {
       html: buildContactEmailHtml(sanitizedName, sanitizedEmail, sanitizedMessage),
     });
 
-    await transporter.sendMail({
-      from: toEmail,
-      to: sanitizedEmail,
-      subject: `Re: New Portfolio Message from ${sanitizedName}`,
-      text: `Thank you for contacting me! I have received your message and will get back to you as soon as possible.\n\nBest regards,\nGeorge Shenoda`,
-      html: buildAutoReplyHtml(sanitizedName, sanitizedEmail, emailUser),
-    })
+    // Optional auto-reply to the form submitter
+    const autoReplyEnabled = process.env.CONTACT_AUTO_REPLY !== 'false';
+    if (autoReplyEnabled) {
+      await transporter.sendMail({
+        from: toEmail,
+        to: sanitizedEmail,
+        subject: `Re: New Portfolio Message from ${sanitizedName}`,
+        text: `Thank you for contacting me! I have received your message and will get back to you as soon as possible.\n\nBest regards,\nGeorge Shenoda`,
+        html: buildAutoReplyHtml(sanitizedName, sanitizedEmail, emailUser),
+      });
+    }
 
     return { success: true };
   } catch (err: unknown) {

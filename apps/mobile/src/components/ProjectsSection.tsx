@@ -6,7 +6,6 @@ import {
   Text,
   View,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   projects as bundledProjects,
   type Project,
@@ -14,71 +13,25 @@ import {
 import { ArrowUpRight } from 'lucide-react-native';
 import PressableScale from './PressableScale';
 import Reveal from './Reveal';
-import { SITE_URL, resolveAssetUrl } from '../config';
+import { resolveAssetUrl } from '../config';
 import { usePalette } from '../theme-mode';
 
 const INITIAL_COUNT = 6;
 const LOAD_STEP = 6;
-const CACHE_KEY = 'projects-cache-v1';
-
-type ProjectsCache = {
-  savedAt: number;
-  projects: Project[];
-};
 
 function delayForIndex(index: number): number {
   const position = index % 3;
   return position === 1 ? 150 : position === 2 ? 300 : 0;
 }
 
-function ProjectsSection() {
+type ProjectsSectionProps = {
+  projects: Project[];
+  cachedAt: number | null;
+};
+
+function ProjectsSection({ projects, cachedAt }: ProjectsSectionProps) {
   const palette = usePalette();
-  // Bundled snapshot first (offline-safe); then last-cached; then remote-first
-  // refresh mirrors the web app so data edits propagate without reinstall.
-  const [projects, setProjects] = useState<Project[]>(bundledProjects);
-  const [cachedAt, setCachedAt] = useState<number | null>(null);
   const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const raw = await AsyncStorage.getItem(CACHE_KEY);
-        if (raw && !cancelled) {
-          const parsed: unknown = JSON.parse(raw);
-          const cache = parsed as Partial<ProjectsCache> | null;
-          if (
-            cache &&
-            Array.isArray(cache.projects) &&
-            cache.projects.length > 0 &&
-            typeof cache.savedAt === 'number'
-          ) {
-            setProjects(cache.projects);
-            setCachedAt(cache.savedAt);
-          }
-        }
-      } catch {}
-
-      try {
-        const res = await fetch(`${SITE_URL}/api/projects`);
-        if (!res.ok || cancelled) return;
-        const data: unknown = await res.json();
-        if (!Array.isArray(data) || data.length === 0 || cancelled) return;
-        setProjects(data as Project[]);
-        setCachedAt(null);
-        const nextCache: ProjectsCache = {
-          savedAt: Date.now(),
-          projects: data as Project[],
-        };
-        AsyncStorage.setItem(CACHE_KEY, JSON.stringify(nextCache)).catch(() => {});
-      } catch {}
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const visibleProjects = projects.slice(0, visibleCount);
   const remainingCount = projects.length - visibleProjects.length;

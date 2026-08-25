@@ -28,7 +28,8 @@ export async function submitContact(
         const data = (await response.json()) as { error?: string };
         if (data?.error) error = data.error;
       } catch {}
-      return { success: false, error };
+      // 4xx/5xx are NOT network errors — don't queue for retry
+      return { success: false, error, networkError: false };
     }
 
     return { success: true };

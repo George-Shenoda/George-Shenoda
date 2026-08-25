@@ -23,13 +23,24 @@ import ContactForm from './src/components/ContactForm';
 import Navbar from './src/components/Navbar';
 import Footer from './src/components/Footer';
 import CVSheet from './src/components/CVSheet';
+import PrivacySheet from './src/components/PrivacySheet';
 import { ScrollProvider, useScroll, type Section } from './src/scroll';
 import { ThemeModeProvider, usePalette, useThemeMode } from './src/theme-mode';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { projects as bundledProjects, type Project } from '@portfolio/shared';
+import { SITE_URL } from './src/config';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 /** Web sections get scroll-margin-top: 5rem; mirror that when jumping. */
 const SCROLL_MARGIN = 80;
+
+const CACHE_KEY = 'projects-cache-v1';
+
+type ProjectsCache = {
+  savedAt: number;
+  projects: Project[];
+};
 
 function PortfolioApp() {
   const palette = usePalette();
@@ -38,11 +49,58 @@ function PortfolioApp() {
 
   const scrollRef = useRef<ScrollView>(null);
 
+  // Projects state shared with TrustSection for live badge count
+  const [projects, setProjects] = useState<Project[]>(bundledProjects);
+  const [cachedAt, setCachedAt] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(CACHE_KEY);
+        if (raw && !cancelled) {
+          const parsed: unknown = JSON.parse(raw);
+          const cache = parsed as Partial<ProjectsCache> | null;
+          if (
+            cache &&
+            Array.isArray(cache.projects) &&
+            cache.projects.length > 0 &&
+            typeof cache.savedAt === 'number'
+          ) {
+            setProjects(cache.projects);
+            setCachedAt(cache.savedAt);
+          }
+        }
+      } catch {}
+
+      try {
+        const res = await fetch(`${SITE_URL}/api/projects`);
+        if (!res.ok || cancelled) return;
+        const data: unknown = await res.json();
+        if (!Array.isArray(data) || data.length === 0 || cancelled) return;
+        setProjects(data as Project[]);
+        setCachedAt(null);
+        const nextCache: ProjectsCache = {
+          savedAt: Date.now(),
+          projects: data as Project[],
+        };
+        AsyncStorage.setItem(CACHE_KEY, JSON.stringify(nextCache)).catch(() => {});
+      } catch {}
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const navigate = useCallback(
     (section: Section) => {
       const top = getSectionTop(section);
       if (top != null && scrollRef.current) {
-        scrollRef.current.scrollTo({ y: Math.max(0, top - SCROLL_MARGIN), animated: true });
+        // Account for sticky navbar height + safe area top + scroll margin
+        const navbarOffset = 80;
+        scrollRef.current.scrollTo({ y: Math.max(0, top - navbarOffset), animated: true });
       }
     },
     [getSectionTop]
@@ -57,10 +115,15 @@ function PortfolioApp() {
   const openCv = useCallback(() => setCvOpen(true), []);
   const closeCv = useCallback(() => setCvOpen(false), []);
 
+  // Privacy sheet state
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const openPrivacy = useCallback(() => setPrivacyOpen(true), []);
+  const closePrivacy = useCallback(() => setPrivacyOpen(false), []);
+
   return (
     <View style={{ flex: 1, backgroundColor: palette.background }}>
       <StatusBar style={scheme === 'light' ? 'dark' : 'light'} />
-      <Navbar onNavigate={navigate} onScrollTop={scrollTop} />
+      <Navbar onNavigate={navigate} onScrollTop={scrollTop} onHome={scrollTop} />
       <ScrollView
         ref={scrollRef}
         onScroll={onScroll}
@@ -77,15 +140,16 @@ function PortfolioApp() {
         </View>
         <BusinessSection />
         <View onLayout={trackSection('projects')}>
-          <ProjectsSection />
+          <ProjectsSection projects={projects} cachedAt={cachedAt} />
         </View>
-        <TrustSection />
+        <TrustSection projectsCount={projects.length} />
         <View onLayout={trackSection('contact')}>
           <ContactForm />
         </View>
-        <Footer onNavigate={navigate} />
+        <Footer onNavigate={navigate} onNavigateToPrivacy={openPrivacy} />
       </ScrollView>
       <CVSheet visible={cvOpen} onClose={closeCv} />
+      <PrivacySheet visible={privacyOpen} onClose={closePrivacy} />
     </View>
   );
 }

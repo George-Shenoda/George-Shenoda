@@ -1,41 +1,69 @@
-# Fix Plan
+# Fix Plan — Portfolio Multi-Platform Issues
 
-## Issues to Fix
+## Branch: fix/multi-platform-issues
 
-### 1. Expo Go Worklets Version Mismatch
-**Error**: `Error [worklets] mismatch between javascript code version and worklets babel plugin version (0.10.1 vs 0.10.4)`
+### Tasks
 
-**Root Cause**: `react-native-worklets` is pinned at `0.10.1` in `apps/mobile/package.json`, but `react-native-reanimated@4.5.1` expects version `0.10.4`.
+1. **Button nativeButton warning (web)**
+   - Fix `DropdownMenuTrigger` wrapper in `apps/web/components/web/navbar.tsx:136`
+   - Keep `View CV` link correct (`nativeButton={false}` + `<Link>`)
+   - Revert trigger to default (`nativeButton={true}`) or render non-`<button>`
 
-**Fix**: Update `react-native-worklets` to `0.10.4` in `apps/mobile/package.json`.
+2. **Back button on /cv and /privacy (web + desktop)**
+   - Add sticky header with Back + Print to `apps/web/app/cv/page.tsx`
+   - Add sticky header with Back to `apps/web/app/privacy/page.tsx`
+   - Use `router.back()` fallback to `router.push("/")`
 
----
+3. **Navbar cross-route navigation (web + desktop)**
+   - Update `apps/web/utils/scroll.ts` and `navbar.tsx` to handle `/cv`/`/privacy` routes
+   - Use `usePathname` + `useRouter` from `next/navigation`
+   - If not on `/`, navigate to `/#section` instead of scrolling
 
-### 2. Web Navbar Scroll Highlighting Issue
-**Problem**: When scrolling to the Contact section, the navbar underline stays under "Projects" instead of moving to "Contact".
+4. **Mobile workflow/projects scroll fix**
+   - Audit `apps/mobile/App.tsx` layout measurement
+   - Fix `navigate` to wait for `sectionTops` and subtract `barHeight + insets.top + SCROLL_MARGIN`
+   - Ensure `BusinessSection`/`TrustSection` don't interfere
 
-**Root Cause**: In `apps/web/components/web/navbar.tsx`, the active section detection uses:
-```javascript
-if (el.getBoundingClientRect().top <= 160) {
-    current = id;
-    break;
-}
-```
+5. **Mobile PrivacySheet dark mode**
+   - Mirror `CVSheet` theming: use `usePalette()`/`useThemeMode()`
+   - Switch `backdrop`, `sheet`, `topBar`, `title`, `SectionTitle/Body/Bullet` colors
 
-When the Contact section is near the bottom of the page, its top may never reach `<= 160px` from the viewport top before the page ends. The logic iterates from bottom to top (projects → workflow), so it stops at "projects" as the last section that satisfied the condition.
+6. **Contact form fixes**
+   - **Offline detection**: Fix `NetInfo`/`fetch` error handling in `packages/shared/src/contact-client.ts`, `apps/mobile/src/components/ContactForm.tsx`, `apps/web/components/web/Contact.tsx`
+   - **Email routing**: Fix Nodemailer `from`/`to`/`replyTo` in `apps/web/app/api/contact/route.ts`
+   - Distinguish `networkError` vs validation/server error
 
-**Fix**: Add a check for when we're near the bottom of the page - if the user has scrolled past the projects section and is near the end, force "contact" as active.
+7. **TrustSection badge count (mobile)**
+   - Remove hardcoded `import { projects } from '@portfolio/shared'`
+   - Use live fetched count from `ProjectsSection` (lift state or context)
 
-The fix should:
-1. Check if we're near the bottom of the page (e.g., within 100px of max scroll)
-2. If so, and contact section exists, set active to "contact"
-3. Otherwise use the existing logic
+8. **Release/tag documentation**
+   - Add note to README: project edits = no tag (live fetch), code changes = tag
 
----
+### Files to Modify
 
-## Implementation Steps
+- `apps/web/components/web/navbar.tsx`
+- `apps/web/components/ui/button.tsx` (if needed)
+- `apps/web/components/ui/dropdown-menu.tsx` (if needed)
+- `apps/web/utils/scroll.ts`
+- `apps/web/app/cv/page.tsx`
+- `apps/web/app/privacy/page.tsx`
+- `apps/mobile/App.tsx`
+- `apps/mobile/src/scroll.tsx`
+- `apps/mobile/src/components/Navbar.tsx`
+- `apps/mobile/src/components/PrivacySheet.tsx`
+- `apps/mobile/src/components/ProjectsSection.tsx`
+- `apps/mobile/src/components/TrustSection.tsx`
+- `apps/mobile/src/components/ContactForm.tsx`
+- `apps/mobile/src/outbox-storage.ts`
+- `packages/shared/src/contact-client.ts`
+- `apps/web/components/web/Contact.tsx`
+- `apps/web/app/api/contact/route.ts`
+- `apps/web/app/api/projects/route.ts` (verify)
 
-1. ✅ Update `apps/mobile/package.json` - change `react-native-worklets` from `0.10.1` to `0.10.4`
-2. ✅ Update `apps/web/components/web/navbar.tsx` - fix the active section detection logic
-3. ✅ Run `npm install` in mobile app to update dependencies
-4. ✅ Test both fixes - build, lint, and typecheck pass
+### Verification
+
+- `npm run typecheck -w @portfolio/web` + `npm run lint -w @portfolio/web` + `npm run build -w @portfolio/web`
+- `npm run typecheck -w @portfolio/mobile` + `expo start --clear`
+- Manual contact form test on web/mobile/desktop
+- Tag release for code changes only

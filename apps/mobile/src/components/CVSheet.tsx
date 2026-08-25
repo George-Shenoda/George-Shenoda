@@ -15,6 +15,7 @@ import { cv } from '@portfolio/shared';
 import PressableScale from './PressableScale';
 import { shareResumePdf } from '../cv-pdf';
 import { fontFamily } from '../fonts';
+import { usePalette } from '../theme-mode';
 
 type CVSheetProps = {
   visible: boolean;
@@ -22,14 +23,15 @@ type CVSheetProps = {
 };
 
 /**
- * Paper-surface CV document rendered from the shared cv data. Colors are fixed
- * (warm paper + near-black ink) regardless of the app's active theme, mirroring
- * the web /cv page. Fully offline: data is bundled via @portfolio/shared and
- * "Save PDF" shares the bundled resume.pdf through the OS share sheet.
+ * Paper-surface CV document rendered from the shared cv data. Colors adapt
+ * to the app's active theme (light/dark), mirroring the web /cv page.
+ * Fully offline: data is bundled via @portfolio/shared and "Save PDF" shares
+ * the bundled resume.pdf through the OS share sheet.
  */
 function CVSheet({ visible, onClose }: CVSheetProps) {
   const insets = useSafeAreaInsets();
   const [saving, setSaving] = useState(false);
+  const palette = usePalette();
 
   const { profile, links, summary, experience, education, projects, skillGroups, certifications, languages } = cv;
 
@@ -49,6 +51,8 @@ function CVSheet({ visible, onClose }: CVSheetProps) {
     Linking.openURL(url).catch(() => {});
   }
 
+  const isLight = palette.background === '#ffffff';
+
   return (
     <Modal
       visible={visible}
@@ -56,10 +60,10 @@ function CVSheet({ visible, onClose }: CVSheetProps) {
       statusBarTranslucent
       onRequestClose={onClose}
     >
-      <StatusBar barStyle="dark-content" />
-      <View style={[styles.backdrop, { paddingTop: insets.top }]}>
-        <View style={styles.topBar}>
-          <Text style={[styles.sectionLabel, { marginBottom: 0 }]}>Curriculum Vitae</Text>
+      <StatusBar barStyle={isLight ? 'dark-content' : 'light-content'} />
+      <View style={[styles.backdrop, { paddingTop: insets.top, backgroundColor: palette.band }]}>
+        <View style={[styles.topBar, { backgroundColor: palette.background, borderBottomColor: palette.cardBorder }]}>
+          <Text style={[styles.sectionLabel, { marginBottom: 0, color: palette.primary }]}>Curriculum Vitae</Text>
           <Pressable
             onPress={onClose}
             accessibilityRole="button"
@@ -67,126 +71,126 @@ function CVSheet({ visible, onClose }: CVSheetProps) {
             hitSlop={8}
             style={({ pressed }) => [
               styles.closeButton,
-              { opacity: pressed ? 0.6 : 1 },
+              { opacity: pressed ? 0.6 : 1, backgroundColor: palette.accent },
             ]}
           >
-            <X size={22} color="#171717" />
+            <X size={22} color={palette.text} />
           </Pressable>
         </View>
 
         <ScrollView
           contentContainerStyle={[
             styles.sheet,
-            { paddingBottom: insets.bottom + 24 },
+            { paddingBottom: insets.bottom + 24, backgroundColor: palette.card },
           ]}
         >
-          <Text style={styles.name}>{profile.name}</Text>
-          <Text style={styles.headline}>{profile.headline}</Text>
+          <Text style={[styles.name, { color: palette.text }]}>{profile.name}</Text>
+          <Text style={[styles.headline, { color: palette.primary }]}>{profile.headline}</Text>
           <View style={styles.metaRow}>
-            <MetaText>{profile.location}</MetaText>
-            <MetaDot />
-            <MetaText onPress={() => openUrl(`mailto:${profile.email}`)}>
+            <MetaText palette={palette}>{profile.location}</MetaText>
+            <MetaDot palette={palette} />
+            <MetaText palette={palette} onPress={() => openUrl(`mailto:${profile.email}`)}>
               {profile.email}
             </MetaText>
             {links.map(({ label, href }) => (
               <View key={label} style={styles.metaItem}>
-                <MetaDot />
-                <MetaText onPress={() => openUrl(href)}>{label}</MetaText>
+                <MetaDot palette={palette} />
+                <MetaText palette={palette} onPress={() => openUrl(href)}>{label}</MetaText>
               </View>
             ))}
           </View>
 
-          <Text style={styles.summary}>{summary}</Text>
+          <Text style={[styles.summary, { color: palette.text }]}>{summary}</Text>
 
-          <SectionLabel>Experience</SectionLabel>
+          <SectionLabel palette={palette}>Experience</SectionLabel>
           <View style={{ gap: 20 }}>
             {experience.map((entry) => (
               <View key={`${entry.company}-${entry.period}`} style={{ gap: 6 }}>
                 <View style={styles.rowBaseline}>
-                  <Text style={styles.entryTitle}>
+                  <Text style={[styles.entryTitle, { color: palette.text }]}>
                     {entry.role}
-                    <Text style={styles.entryCompany}> — {entry.company}</Text>
+                    <Text style={[styles.entryCompany, { color: palette.mutedText }]}> — {entry.company}</Text>
                   </Text>
-                  <Text style={styles.period}>{entry.period}</Text>
+                  <Text style={[styles.period, { color: palette.mutedText }]}>{entry.period}</Text>
                 </View>
                 <View style={{ gap: 4 }}>
                   {entry.highlights.map((highlight) => (
-                    <Bullet key={highlight}>{highlight}</Bullet>
+                    <Bullet key={highlight} palette={palette}>{highlight}</Bullet>
                   ))}
                 </View>
               </View>
             ))}
           </View>
 
-          <SectionLabel>Selected Projects</SectionLabel>
+          <SectionLabel palette={palette}>Selected Projects</SectionLabel>
           <View style={{ gap: 14 }}>
             {projects.map((project) => (
               <View key={project.id} style={{ gap: 2 }}>
                 <View style={styles.rowBaseline}>
-                  <Text style={styles.projectTitle}>
+                  <Text style={[styles.projectTitle, { color: palette.text }]}>
                     {project.link ? (
-                      <Text onPress={() => openUrl(project.link!)}>
+                      <Text onPress={() => openUrl(project.link!)} style={{ color: palette.primary }}>
                         {project.name}
                       </Text>
                     ) : (
                       project.name
                     )}
                   </Text>
-                  <Text style={styles.techMono}>{project.techstack.join(' · ')}</Text>
+                  <Text style={[styles.techMono, { color: palette.mutedText }]}>{project.techstack.join(' · ')}</Text>
                 </View>
-                <Text style={styles.body}>{project.description}</Text>
+                <Text style={[styles.body, { color: palette.text }]}>{project.description}</Text>
               </View>
             ))}
           </View>
 
-          <SectionLabel>Education</SectionLabel>
+          <SectionLabel palette={palette}>Education</SectionLabel>
           {education.map((entry) => (
             <View key={entry.degree} style={styles.rowBaseline}>
-              <Text style={styles.projectTitle}>
+              <Text style={[styles.projectTitle, { color: palette.text }]}>
                 {entry.degree}
-                <Text style={styles.entryCompany}> — {entry.school}</Text>
+                <Text style={[styles.entryCompany, { color: palette.mutedText }]}> — {entry.school}</Text>
               </Text>
-              <Text style={styles.period}>{entry.period}</Text>
+              <Text style={[styles.period, { color: palette.mutedText }]}>{entry.period}</Text>
             </View>
           ))}
 
-          <SectionLabel>Skills</SectionLabel>
+          <SectionLabel palette={palette}>Skills</SectionLabel>
           <View style={{ gap: 8 }}>
             {skillGroups.map((group) => (
               <View key={group.label} style={{ flexDirection: 'row', gap: 8 }}>
-                <Text style={styles.skillLabel}>{group.label}</Text>
-                <Text style={[styles.body, { flex: 1 }]}>{group.items.join(', ')}</Text>
+                <Text style={[styles.skillLabel, { color: palette.text }]}>{group.label}</Text>
+                <Text style={[styles.body, { flex: 1, color: palette.text }]}>{group.items.join(', ')}</Text>
               </View>
             ))}
           </View>
 
           <View style={styles.twoCol}>
             <View style={{ flex: 1 }}>
-              <SectionLabel>Certifications</SectionLabel>
+              <SectionLabel palette={palette}>Certifications</SectionLabel>
               <View style={{ gap: 6 }}>
                 {certifications.map((certification) => (
                   <Text key={certification.title} style={styles.listItem}>
-                    <Text style={styles.semiBold}>{certification.title}</Text>
-                    <Text style={styles.meta}> — {certification.issuer} {certification.year}</Text>
+                    <Text style={[styles.semiBold, { color: palette.text }]}>{certification.title}</Text>
+                    <Text style={[styles.meta, { color: palette.mutedText }]}> — {certification.issuer} {certification.year}</Text>
                   </Text>
                 ))}
               </View>
             </View>
             <View style={{ flex: 1 }}>
-              <SectionLabel>Languages</SectionLabel>
+              <SectionLabel palette={palette}>Languages</SectionLabel>
               <View style={{ gap: 6 }}>
                 {languages.map((language) => (
                   <Text key={language.name} style={styles.listItem}>
-                    <Text style={styles.semiBold}>{language.name}</Text>
-                    <Text style={styles.meta}> — {language.level}</Text>
+                    <Text style={[styles.semiBold, { color: palette.text }]}>{language.name}</Text>
+                    <Text style={[styles.meta, { color: palette.mutedText }]}> — {language.level}</Text>
                   </Text>
                 ))}
               </View>
             </View>
           </View>
 
-          <View style={styles.footerRule} />
-          <Text style={styles.footer}>
+          <View style={[styles.footerRule, { borderTopColor: palette.cardBorder }]} />
+          <Text style={[styles.footer, { color: palette.mutedText }]}>
             {profile.name} — {profile.headline}.
           </Text>
         </ScrollView>
@@ -194,7 +198,7 @@ function CVSheet({ visible, onClose }: CVSheetProps) {
         <View
           style={[
             styles.actions,
-            { paddingBottom: insets.bottom + 12 },
+            { paddingBottom: insets.bottom + 12, backgroundColor: palette.card, borderTopColor: palette.cardBorder },
           ]}
         >
           <PressableScale
@@ -205,13 +209,13 @@ function CVSheet({ visible, onClose }: CVSheetProps) {
               opacity: saving ? 0.7 : 1,
               borderRadius: 14,
               overflow: 'hidden',
-              backgroundColor: '#171717',
+              backgroundColor: palette.text,
               paddingVertical: 16,
             }}
           >
             <Text
               style={{
-                color: '#faf9f7',
+                color: palette.background,
                 fontSize: 15,
                 fontWeight: '600',
                 textAlign: 'center',
@@ -223,7 +227,7 @@ function CVSheet({ visible, onClose }: CVSheetProps) {
           <Pressable onPress={onClose} accessibilityRole="button" hitSlop={8}>
             <Text
               style={{
-                color: '#525252',
+                color: palette.mutedText,
                 fontSize: 14,
                 fontWeight: '500',
                 textAlign: 'center',
@@ -239,15 +243,9 @@ function CVSheet({ visible, onClose }: CVSheetProps) {
   );
 }
 
-const ink = '#171717';
-const mutedInk = '#525252';
-const teal = '#0f7173';
-const hairline = '#d6d3cb';
-
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: '#e9e7e2',
   },
   topBar: {
     flexDirection: 'row',
@@ -255,31 +253,28 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   closeButton: {
     width: 44,
     height: 44,
     borderRadius: 999,
-    backgroundColor: '#e2dfd9',
     alignItems: 'center',
     justifyContent: 'center',
   },
   sheet: {
     flexGrow: 1,
-    backgroundColor: '#faf9f7',
     marginHorizontal: 12,
     borderRadius: 18,
     paddingHorizontal: 24,
     paddingVertical: 28,
   },
   name: {
-    color: ink,
     fontSize: 32,
     fontWeight: '700',
     letterSpacing: -0.5,
   },
   headline: {
-    color: teal,
     fontSize: 16,
     fontWeight: '500',
     marginTop: 8,
@@ -296,13 +291,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   summary: {
-    color: '#333333',
     fontSize: 15,
     lineHeight: 23,
     marginTop: 24,
   },
   sectionLabel: {
-    color: teal,
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -310,55 +303,44 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   entryTitle: {
-    color: ink,
     fontSize: 16,
     fontWeight: '700',
     flexShrink: 1,
   },
   entryCompany: {
-    color: mutedInk,
     fontWeight: '500',
   },
   projectTitle: {
-    color: ink,
     fontSize: 15,
     fontWeight: '700',
     flexShrink: 1,
   },
   techMono: {
-    color: mutedInk,
     fontFamily: fontFamily.mono,
     fontSize: 12,
   },
   period: {
-    color: mutedInk,
     fontFamily: fontFamily.mono,
     fontSize: 13,
   },
   body: {
-    color: '#333333',
     fontSize: 14,
     lineHeight: 21,
   },
   skillLabel: {
-    color: ink,
     fontSize: 14,
     lineHeight: 21,
     fontWeight: '600',
     width: 128,
   },
   listItem: {
-    color: '#333333',
     fontSize: 14,
     lineHeight: 21,
   },
   semiBold: {
     fontWeight: '600',
-    color: ink,
   },
-  meta: {
-    color: mutedInk,
-  },
+  meta: {},
   rowBaseline: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -373,39 +355,35 @@ const styles = StyleSheet.create({
   },
   footerRule: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: hairline,
     marginTop: 40,
     paddingTop: 12,
   },
   footer: {
-    color: '#7a7a74',
     fontSize: 11,
   },
   actions: {
-    backgroundColor: '#faf9f7',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: hairline,
     paddingHorizontal: 20,
     paddingTop: 12,
     gap: 4,
   },
 });
 
-function MetaText({ children, onPress }: { children: ReactNode; onPress?: () => void }) {
+function MetaText({ children, onPress, palette }: { children: ReactNode; onPress?: () => void; palette: ReturnType<typeof usePalette> }) {
   return (
-    <Text onPress={onPress} style={{ color: mutedInk, fontSize: 13 }}>
+    <Text onPress={onPress} style={{ color: palette.mutedText, fontSize: 13 }}>
       {children}
     </Text>
   );
 }
 
-function MetaDot() {
+function MetaDot({ palette }: { palette: ReturnType<typeof usePalette> }) {
   return (
-    <Text style={{ color: mutedInk, fontSize: 13, marginHorizontal: 8 }}>·</Text>
+    <Text style={{ color: palette.mutedText, fontSize: 13, marginHorizontal: 8 }}>·</Text>
   );
 }
 
-function SectionLabel({ children }: { children: ReactNode }) {
+function SectionLabel({ children, palette }: { children: ReactNode; palette: ReturnType<typeof usePalette> }) {
   return (
     <View
       style={{
@@ -416,17 +394,17 @@ function SectionLabel({ children }: { children: ReactNode }) {
         marginBottom: 12,
       }}
     >
-      <Text style={styles.sectionLabel}>{children}</Text>
-      <View style={{ flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: hairline }} />
+      <Text style={[styles.sectionLabel, { color: palette.primary }]}>{children}</Text>
+      <View style={{ flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: palette.cardBorder }} />
     </View>
   );
 }
 
-function Bullet({ children }: { children: ReactNode }) {
+function Bullet({ children, palette }: { children: ReactNode; palette: ReturnType<typeof usePalette> }) {
   return (
     <View style={{ flexDirection: 'row', gap: 10, paddingLeft: 8 }}>
-      <Text style={{ color: '#333333', fontSize: 14, lineHeight: 21 }}>•</Text>
-      <Text style={[styles.body, { flex: 1 }]}>{children}</Text>
+      <Text style={{ color: palette.text, fontSize: 14, lineHeight: 21 }}>•</Text>
+      <Text style={[styles.body, { flex: 1, color: palette.text }]}>{children}</Text>
     </View>
   );
 }

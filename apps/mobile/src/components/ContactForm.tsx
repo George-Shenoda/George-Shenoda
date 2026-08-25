@@ -64,7 +64,8 @@ function ContactForm() {
     const flush = async () => {
       try {
         const net = await NetInfo.fetch();
-        if (!net.isConnected) return;
+        // Only flush if we have actual internet connectivity
+        if (!net.isConnected || net.isInternetReachable === false) return;
         const result = await outbox.flush();
         if (!cancelled) setQueuedCount(result.remaining.length);
       } catch {
@@ -75,7 +76,8 @@ function ContactForm() {
     void flush();
 
     const unsubscribeNet = NetInfo.addEventListener((state) => {
-      if (state.isConnected && state.isInternetReachable !== false) {
+      // Only flush on genuine online events with internet reachability
+      if (state.isConnected && state.isInternetReachable === true) {
         void flush();
       }
     });
