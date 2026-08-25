@@ -20,7 +20,7 @@ when saving the env var.
    (see README); analytics stays off until set
 4. README documents the variable as server-side-only
 
-### Verification
+### User follow-ups
 
 - [ ] typecheck/lint/build green
 - [ ] Built homepage HTML contains `googletagmanager.com/gtag/js` (env present locally)

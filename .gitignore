@@ -59,3 +59,7 @@ certs/
 
 # expo export output
 apps/mobile/dist
+
+# Firebase configs (injected via CI secret GOOGLE_SERVICES_JSON_B64; never commit)
+apps/mobile/google-services.json
+**/GoogleService-Info.plist
