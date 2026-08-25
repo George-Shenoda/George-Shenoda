@@ -9,10 +9,6 @@ on:
 permissions:
   contents: write
 
-env:
-  # Setup files are built on every run; publishing to GitHub Releases only on tags.
-  IS_TAG: ${{ startsWith(github.ref, 'refs/tags/v') }}
-
 jobs:
   # Desktop builds (Windows .exe setup, macOS dmg, Linux AppImage/deb)
   desktop:
@@ -62,10 +58,11 @@ jobs:
           if [ -n "$APPLE_APP_SPECIFIC_PASSWORD_SECRET" ]; then echo "APPLE_APP_SPECIFIC_PASSWORD=$APPLE_APP_SPECIFIC_PASSWORD_SECRET" >> "$GITHUB_ENV"; fi
           if [ -n "$APPLE_TEAM_ID_SECRET" ]; then echo "APPLE_TEAM_ID=$APPLE_TEAM_ID_SECRET" >> "$GITHUB_ENV"; fi
 
-      - name: Package installers (publish only on tags)
-        run: npx electron-builder --publish ${{ env.IS_TAG == 'true' && 'always' || 'never' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Matrix jobs never publish directly — parallel uploads to one Release
+      # race on identical asset names (422 already_exists). The gated `release`
+      # job attaches all installer artifacts to the tag's Release instead.
+      - name: Package installers
+        run: npx electron-builder --publish never
 
       - name: Upload installer artifacts
         uses: actions/upload-artifact@v4

@@ -1,6 +1,6 @@
 {
   "name": "my_portfolio",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "private": true,
   "description": "George Shenoda portfolio — website, desktop and mobile apps",
   "author": "George Shenoda <general@email.com>",
@@ -34,5 +34,9 @@
     "png-to-ico": "^3.0.2",
     "pngjs": "^7.0.0",
     "vitest": "^4.1.11"
+  },
+  "allowScripts": {
+    "@react-native-firebase/app": true,
+    "@react-native-firebase/analytics": true
   }
 }

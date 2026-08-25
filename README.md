@@ -53,14 +53,37 @@ npm run dev            # web dev server → http://localhost:3000
 npm run desktop:dev    # Electron desktop shell (dev)
 ```
 
-Mobile:
+Mobile (dev build — required since Firebase native modules landed):
 
 ```bash
 cd apps/mobile
-npx expo start         # scan the QR code with Expo Go
+npx expo run:android    # build + install a development APK on a device/emulator
+npx expo start          # then start Metro bundler
 ```
 
-> If native dependencies change, restart Metro with `npx expo start --clear` and clear the Expo Go app cache on device.
+> Expo Go is no longer supported for this app (native Firebase SDK). If native dependencies change, restart Metro with `npx expo start --clear`.
+
+## Analytics
+
+- **Web/Desktop**: GA4 gtag.js via `GOOGLE_ANALYTICS_ID` (see env table).
+- **Mobile**: Firebase Analytics (`@react-native-firebase/*`), configured by `apps/mobile/google-services.json`.
+  - **This file is intentionally NOT committed** (contains an API key). Setup:
+    - **Locally**: place your `google-services.json` at `apps/mobile/google-services.json` (gitignored).
+    - **EAS cloud builds**: configs arrive via **EAS environment variables** — EAS only uploads git-tracked files, so Actions secrets don't work. Create once via the Expo dashboard (your project → Build → Environment variables → Create, environments: Preview + Production) or:
+      ```powershell
+      cd apps\mobile
+      eas env:create --name GOOGLE_SERVICES_JSON_B64 --value ([Convert]::ToBase64String([IO.File]::ReadAllBytes("google-services.json"))) --environment production --environment preview
+      eas env:create --name GOOGLE_SERVICES_PLIST_B64 --value ([Convert]::ToBase64String([IO.File]::ReadAllBytes("GoogleService-Info.plist"))) --environment production --environment preview   # when iOS is enabled
+      ```
+      `eas-build-pre-install` runs `scripts/eas-write-firebase-configs.mjs`, which materializes both files in every cloud build and fails loudly if they are missing there.
+  - Events: `app_open` + `screen_view` per section (`home`, `workflow`, `projects`, `contact`) — all calls are fail-safe no-ops.
+  - Verify on device with Debug View:
+    ```bash
+    adb shell setprop debug.firebase.analytics.app com.georgeshenoda.portfolio
+    ```
+    then check Firebase console → Analytics → DebugView.
+  - If a config ever leaks: rotate the key in Google Cloud → Credentials, re-download from Firebase console, update the local file + EAS env var.
+  - **iOS prep** (activate when an Apple build is needed): register the iOS app in Firebase with bundle id `com.georgeshenoda.portfolio`, download `GoogleService-Info.plist` into `apps/mobile/` (gitignored), then add `"ios": { "googleServicesFile": "./GoogleService-Info.plist" }` to `app.json`. The JS code needs no changes.
 
 ## Production Build
 
