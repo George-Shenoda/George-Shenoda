@@ -162,8 +162,8 @@ all apps startup: try remote → fallback to bundled snapshot (offline-safe)
 
 # PHASE 2 — CV System, Offline Mode & Mobile Parity Redesign
 
-> Status: **IN PROGRESS.** Steps 8–13 DONE (commits: 192b922, d7efde8, f1b89a4, 9fd5cda, 194c719, e645626 + foundation below).
-> ▶▶ RESUME HERE (next session): **Step 14 — Mobile CV + connectivity.** Steps 8–12 verified green; Step 13 typecheck + `expo export --platform android` (Hermes 4.6MB bundle) both green.
+> Status: **IN PROGRESS.** Steps 8–14 DONE. Phase 1 merged via PR #1; CV/projects data refresh + regenerated resume.pdf landed on main (`b1ebcea`).
+> ▶▶ RESUME HERE (next session): **Step 15 — Verification matrix** (final gates before closing Phase 2). Steps 8–13 verified green; Step 14 typecheck + `expo export --platform android` green (Hermes 4.7MB, resume.pdf bundled 219KB).
 > Work through steps in order; tick boxes + note commit hashes as each lands. One commit per step.
 
 ## Goal
@@ -243,10 +243,10 @@ all apps startup: try remote → fallback to bundled snapshot (offline-safe)
 
 ## Step 14 — Mobile CV + connectivity `[commit: feat(mobile): offline cv sheet + auto-flush queue]`
 
-- [ ] `src/components/CVSheet.tsx`: core-RN Modal (zero nav deps), own ScrollView, paper-surface document rendered from shared cv data regardless of app theme; close button; footer actions
-- [ ] Hero/Navbar CV buttons open CVSheet (replace remote-PDF Linking)
-- [ ] "Save PDF": bundled resume.pdf → cache copy (expo-file-system) → share/open (expo-sharing) — works in airplane mode
-- [ ] NetInfo listener flushes outbox on reconnect; launch + AppState→active triggers too
+- [x] `src/components/CVSheet.tsx`: core-RN Modal (zero nav deps), own ScrollView, paper-surface document rendered from shared cv data regardless of app theme; close button; footer actions *(mirrors /cv structure exactly — fixed warm-paper palette #e9e7e2/#faf9f7/ink/teal; slide presentation)*
+- [x] Hero/Navbar CV buttons open CVSheet (replace remote-PDF Linking) *(both hero links open the sheet; mobile navbar has no CV button by web <768px parity — hamburger stays nav-only)*
+- [x] "Save PDF": bundled resume.pdf → cache copy (expo-file-system) → share/open (expo-sharing) — works in airplane mode *(new dep: expo-asset for bundled-module resolution; `pdf` added to metro assetExts; PDF copied to apps/mobile/assets from web public — keep in sync when regenerating)*
+- [x] NetInfo listener flushes outbox on reconnect; launch + AppState→active triggers too *(all three guarded by `NetInfo.fetch().isConnected` so offline flushes don't burn retry attempts)*
 
 ## Step 15 — Verification matrix `[fixes committed as needed]`
 
