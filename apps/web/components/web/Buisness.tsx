@@ -35,15 +35,15 @@ function Business() {
                         <Settings className="w-16 h-16" />
                     </div>
 
-                    <div className="absolute top-4 left-4 w-16 h-16 rounded-full bg-background dark:bg-[#161d1d] shadow-xl border border-border p-3 flex items-center justify-center hover:scale-110 transition-all duration-300 ease-in-out text-foreground">
+                    <div className="absolute top-4 left-4 w-16 h-16 rounded-full bg-background dark:bg-[#161d1d] shadow-xl border border-border p-3 flex items-center justify-center hover:scale-110 transition-transform duration-300 ease-in-out text-foreground">
                         <Webhook className="w-8 h-8" />
                     </div>
 
-                    <div className="absolute bottom-4 left-0 w-16 h-16 rounded-2xl bg-background dark:bg-[#161d1d] shadow-xl border border-border p-3 flex items-center justify-center hover:scale-110 transition-all duration-300 ease-in-out text-primary">
+                    <div className="absolute bottom-4 left-0 w-16 h-16 rounded-2xl bg-background dark:bg-[#161d1d] shadow-xl border border-border p-3 flex items-center justify-center hover:scale-110 transition-transform duration-300 ease-in-out text-primary">
                         <Columns3 className="w-8 h-8" />
                     </div>
 
-                    <div className="absolute top-12 right-0 w-16 h-16 rounded-2xl bg-background dark:bg-[#161d1d] shadow-xl border border-border p-3 flex items-center justify-center hover:scale-110 transition-all duration-300 ease-in-out text-secondary">
+                    <div className="absolute top-12 right-0 w-16 h-16 rounded-2xl bg-background dark:bg-[#161d1d] shadow-xl border border-border p-3 flex items-center justify-center hover:scale-110 transition-transform duration-300 ease-in-out text-secondary">
                         <Cloud className="w-8 h-8 fill-secondary" />
                     </div>
 

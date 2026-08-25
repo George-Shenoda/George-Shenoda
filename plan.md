@@ -1,65 +1,53 @@
-# Plan — Desktop live projects + setup-file release workflow
+# Plan — Google site verification + mobile web-vitals fixes
 
-## Branch: feat/desktop-live-projects
+## Branch: perf/web-vitals-google-verification
 
-Two deliverables in this feature (user-approved):
+Two user-requested items. Baseline: Lighthouse mobile 86 / desktop 99
+(LCP 3.7s with 3,570ms element-render delay; 257 KiB image savings;
+non-composited animations ×5; 13.7 KiB legacy polyfills).
 
-### A. Desktop fetches projects live from the deployed website
+### A. Google Search Console verification
 
-Currently the Electron desktop app serves `/api/projects` from its own bundled
-Next server, so new projects/images only appear after a tagged release. Make it
-load live like mobile already does:
+1. `apps/web/app/layout.tsx` — add `metadata.verification.google` via the Next
+   Metadata API (emits `<meta name="google-site-verification" …>` in `<head>`
+   for the homepage). Content: `2nJ2vS3BR09ScS2fBNtftH9_PhwL6jU2VWB3_jGVtSs`
 
-1. `apps/web/components/web/projects.tsx`
-   - `const LIVE_BASE = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "")`
-   - Fetch `${LIVE_BASE}/api/projects`; on failure retry relative `/api/projects`
-     (preserves offline bundled-snapshot behavior)
-   - Resolve card images through `LIVE_BASE` (`<Image unoptimized>` already used,
-     so absolute URLs need no next.config changes)
-2. `apps/web/app/api/projects/route.ts`
-   - Add `Access-Control-Allow-Origin: *` (public read-only data; Electron window
-     origin is `http://127.0.0.1:<random-port>` → CORS otherwise blocks reading)
-3. Tests: extend `tests/integration/web/projects-route.test.ts` (CORS header)
-4. README: document that adding a project updates ALL platforms via site deploy;
-   tags are only needed for code releases
+### B. Mobile web vitals
 
-### B. Release workflow produces installable setup files
-
-`.github/workflows/release.yml` gaps found while researching:
-
-1. **Android bug**: job uses `--profile production`, but `eas.json` production
-   builds an **app-bundle (.aab)** while the workflow renames it `.apk`.
-   → Build with `--profile preview` (real `.apk`, per eas.json `preview.android.buildType: apk`)
-2. **macOS**: build both x64 and arm64 DMG/zip (runner default is arm64-only)
-3. **Desktop installers not uploaded as workflow artifacts** (only tag-publish).
-   → Upload NSIS Setup `.exe`, portable `.exe`, `.dmg`, `.zip`, `.AppImage`, `.deb`
-   via `actions/upload-artifact` so they exist even without publishing
-4. Add `workflow_dispatch` trigger to produce setup files on demand without a tag;
-   publish step runs `--publish always` only on tag pushes, else `--publish never`;
-   Release-creation job gated to tag pushes
+1. **LCP (biggest win)** — hero content is JS-gated invisible:
+   `Reveal.tsx` renders `opacity-0` until hydration + IntersectionObserver.
+   - `Reveal.tsx`: new `immediate` prop → static CSS-only entrance classes
+     (`motion-safe:animate-in fade-in slide-in-from-bottom-4`), no opacity-0 gating
+   - `hero.tsx`: all five hero Reveals use `immediate`
+2. **Images (~257 KiB)** — `Project.tsx` uses `<Image unoptimized>`:
+   - Remove `unoptimized`; strip the baked `LIVE_BASE` prefix so web serves a
+     relative src through the Vercel optimizer (AVIF/WebP, right-sized)
+   - True cross-origin srcs (desktop live-fetch case) fall back to lazy `<img>`
+3. **Non-composited animations** — replace `transition-all` with explicit
+   transform/box-shadow/border-color transitions (hero CTA, project card,
+   other hot paths found by grep)
+4. **Legacy JS** — modern `browserslist` in `apps/web/package.json`
+   (chrome ≥107, edge ≥107, firefox ≥104, safari ≥16) to shed core-js polyfills
+5. **Font audit** — confirm each loaded family (`Inter`, `Plus_Jakarta_Sans`,
+   `JetBrains_Mono`) is referenced in `globals.css`; drop dead ones
 
 ### Files to modify
 
-- `apps/web/components/web/projects.tsx`
-- `apps/web/app/api/projects/route.ts`
-- `tests/integration/web/projects-route.test.ts`
-- `.github/workflows/release.yml`
-- `README.md`
-
-### Out of scope
-
-- Code signing secrets (already wired via env passthrough, untouched)
-- iOS IPA flow (kept as-is; separate store distribution)
-- Removing dead `apps/mobile/assets/projects/` copies (separate cleanup)
+- `apps/web/app/layout.tsx`
+- `apps/web/components/web/Reveal.tsx`
+- `apps/web/components/web/hero.tsx`
+- `apps/web/components/web/Project.tsx`
+- `apps/web/package.json`
+- possibly `apps/web/globals.css` (font cleanup)
 
 ### Verification
 
-- [ ] `npm test` green (incl. new CORS assertion)
-- [ ] web `typecheck`, `lint`, `build`
-- [ ] Workflow YAML sanity (`npm run` unaffected); actionlint not available — manual review
-- [ ] Manual desktop check optional (needs display): dev run shows live data
+- [ ] `npm test`, web `typecheck`/`lint`/`build` green
+- [ ] Built HTML contains `google-site-verification` meta tag
+- [ ] No core-js polyfill chunk in build output (grep chunks for `Array.prototype.at`)
+- [ ] No `opacity-0` gating above the fold (grep hero)
+- [ ] User re-runs PageSpeed on Vercel preview (target: LCP <2.5s, mobile ≥95)
 
-### Git workflow (per repo rules)
+### Git workflow
 
-- Branch `feat/desktop-live-projects` from latest `origin/main`
-- Commit message = branch name, push after commit, PR → `main`
+- Commit message = branch name, push, PR → main
