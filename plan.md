@@ -1,41 +1,39 @@
-# Plan — Firebase Analytics (Android now, iOS prepped)
+# Plan — Release reset: single tag v0.1.0 + hardened release.yml
 
-## Branch: feat/firebase-analytics
+## Branch: chore/release-v0.1.0
 
-User completed the GA→Firebase wizard manually after the app-stream flake;
-`google-services.json` provided (package `com.georgeshenoda.portfolio`,
-project `geogrge-shenoda`). Approved scope: full native SDK (Expo Go dropped),
-Android wired now, iOS prepared but not activated.
+User request: wipe all existing tags, cut one fresh `v0.1.0`, and finalize
+release.yml. During prep, an incident was discovered & handled:
+
+> **Incident:** PR #16 merged the pre-scrub firebase commit, putting the
+> (already-rotated) google-services.json back on public main and re-tracking it.
+> This branch removes it again (`git rm --cached`, gitignored) — old key is dead
+> per rotation, so historical copies are inert. Remote feature branch should be
+> deleted after merge.
 
 ### Changes
 
-1. Move `google-services.json` → `apps/mobile/google-services.json` (committed;
-   Firebase-classified non-secret; required in-repo for EAS cloud builds)
-2. Deps: `@react-native-firebase/app` + `@react-native-firebase/analytics`
-   via `npx expo install` (new-arch compatible; Expo SDK 57 minSdk 24 ≥ requirement)
-3. `apps/mobile/app.json`:
-   - `"android": { "googleServicesFile": "./google-services.json" }`
-   - plugins += `"@react-native-firebase/app"`
-   - iOS `googleServicesFile` NOT added yet — activates when user provides
-     `GoogleService-Info.plist` (documented in README)
-4. New `apps/mobile/src/analytics.ts`: safe wrapper — every call try/catch
-   no-op so analytics can never crash the app
-5. Instrumentation:
-   - `logAppOpen()` on mount in PortfolioApp
-   - `screen_view` for workflow/projects/contact deduped on `activeSection`
-     change (existing ScrollProvider state — no new scroll logic)
-6. README: dev workflow now requires a dev build (`npx expo run:android`);
-   Expo Go no longer supported for this app; iOS plist steps documented
+1. Remove `apps/mobile/google-services.json` from tracking (untracked local file kept)
+2. `.gitignore`: firebase config entries (lost in the bad merge)
+3. `.github/workflows/release.yml`:
+   - desktop web build bakes `GOOGLE_ANALYTICS_ID` + `NEXT_PUBLIC_SITE_URL`
+     from Actions secrets (desktop installers were shipping without analytics)
+   - android job: restore `google-services.json` from `GOOGLE_SERVICES_JSON_B64`
+     (fail-fast if unset)
+   - ios job: matching `GOOGLE_SERVICES_PLIST_B64` restore step for when iOS is enabled
+4. Tag reset: delete `v0.1.0/v0.1.1/v0.1.2/v0.2.0` (remote+local), create fresh
+   annotated `v0.1.0` on this commit → triggers full Release build
 
-### Verification
+### User follow-ups
 
-- [ ] mobile typecheck green
-- [ ] expo config sanity (`npx expo config --type prebuild` dry check or doctor)
-- [ ] Runtime verify needs device/emulator (user side): DebugView instructions in README
-- [ ] Commit message = branch name; push; PR → main
+- Merge this PR, then delete stale GitHub Releases (v0.1.x / v0.2.0 pages+assets) manually
+- Ensure Actions secrets exist: GOOGLE_ANALYTICS_ID, GOOGLE_SERVICES_JSON_B64,
+  (later) GOOGLE_SERVICES_PLIST_B64, NEXT_PUBLIC_SITE_URL
+- Optionally set EXPO_PUBLIC_SITE_URL via `eas env` so release APKs reach prod APIs
+- Delete stale remote branch feat/firebase-analytics
 
-### Out of scope / later
+## Verification
 
-- iOS `GoogleService-Info.plist` wiring (file not yet available)
-- Custom events beyond app_open + screen_view
-- New release tag (ships with next tagged APK)
+- [x] YAML parses; mobile typecheck green
+- [x] No firebase config tracked anywhere in tree
+- [ ] Workflow run green after tag push
