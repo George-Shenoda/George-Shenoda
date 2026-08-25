@@ -59,10 +59,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # Android build
+  # Android build (skipped unless EXPO_TOKEN secret is set)
   android:
     name: Android
     runs-on: ubuntu-latest
+    env:
+      HAS_EXPO_TOKEN: ${{ secrets.EXPO_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -75,30 +77,39 @@ jobs:
         run: npm ci
 
       - name: Setup Expo
+        if: env.HAS_EXPO_TOKEN == 'true'
         uses: expo/expo-github-action@v8
         with:
           expo-version: latest
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Build Android app
-        run: |
-          cd apps/mobile
-          eas build --platform android --profile production --non-interactive
+      - name: Build Android app and download APK
+        if: env.HAS_EXPO_TOKEN == 'true'
+        working-directory: apps/mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          eas build --platform android --profile production --non-interactive --wait --json > build.json
+          ARTIFACT_URL=$(node -e "const b=JSON.parse(require('fs').readFileSync('build.json','utf8'));console.log(b[0].artifacts.buildUrl)")
+          echo "Downloading from $ARTIFACT_URL"
+          curl -fL "$ARTIFACT_URL" -o app-release.apk
 
       - name: Upload Android artifact
+        if: env.HAS_EXPO_TOKEN == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: apps/mobile/*.apk
+          path: apps/mobile/app-release.apk
+          if-no-files-found: error
           retention-days: 30
 
-  # iOS build
+  # iOS build (skipped unless EXPO_TOKEN secret is set)
   ios:
     name: iOS
     runs-on: macos-latest
+    env:
+      HAS_EXPO_TOKEN: ${{ secrets.EXPO_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -111,24 +122,31 @@ jobs:
         run: npm ci
 
       - name: Setup Expo
+        if: env.HAS_EXPO_TOKEN == 'true'
         uses: expo/expo-github-action@v8
         with:
           expo-version: latest
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Build iOS app
-        run: |
-          cd apps/mobile
-          eas build --platform ios --profile production --non-interactive
+      - name: Build iOS app and download IPA
+        if: env.HAS_EXPO_TOKEN == 'true'
+        working-directory: apps/mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          eas build --platform ios --profile production --non-interactive --wait --json > build.json
+          ARTIFACT_URL=$(node -e "const b=JSON.parse(require('fs').readFileSync('build.json','utf8'));console.log(b[0].artifacts.buildUrl)")
+          echo "Downloading from $ARTIFACT_URL"
+          curl -fL "$ARTIFACT_URL" -o app-release.ipa
 
       - name: Upload iOS artifact
+        if: env.HAS_EXPO_TOKEN == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ios-ipa
-          path: apps/mobile/*.ipa
+          path: apps/mobile/app-release.ipa
+          if-no-files-found: error
           retention-days: 30
 
   # Create GitHub Release with all artifacts
@@ -139,17 +157,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Prepare artifacts directory
+        run: mkdir -p artifacts
+
       - name: Download all artifacts
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           path: artifacts
           merge-multiple: true
+
+      - name: List artifacts
+        run: ls -la artifacts/ || true
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
             artifacts/*
+          fail_on_unmatched_files: false
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
