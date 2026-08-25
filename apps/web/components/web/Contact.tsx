@@ -264,7 +264,7 @@ export default function Contact() {
               <Button
                 type="submit"
                 disabled={isFormDisabled}
-                className="cursor-pointer w-full sm:w-auto px-10 py-6 h-auto bg-linear-to-br from-primary to-secondary text-base text-white font-semibold shadow-lg shadow-primary/30 transition-all duration-300 hover:scale-[1.03] hover:shadow-xl hover:shadow-primary/25 active:scale-[0.98] disabled:opacity-70 disabled:hover:translate-y-0"
+                className="cursor-pointer w-full sm:w-auto px-10 py-6 h-auto bg-linear-to-br from-primary to-secondary text-base text-white font-semibold shadow-lg shadow-primary/30 transition-[transform,box-shadow] duration-300 hover:scale-[1.03] hover:shadow-xl hover:shadow-primary/25 active:scale-[0.98] disabled:opacity-70 disabled:hover:translate-y-0"
               >
                 {status === 'loading' ? (
                   <>

@@ -21,25 +21,25 @@ function Hero() {
             <div aria-hidden className="absolute inset-0 -z-10 pointer-events-none [background-image:radial-gradient(var(--border)_1px,transparent_1px)] [background-size:28px_28px] [mask-image:radial-gradient(ellipse_60%_65%_at_50%_30%,black,transparent)]"></div>
 
             <div className="flex flex-col px-5 pt-20 pb-24 sm:pt-28 sm:pb-28 items-center relative mx-auto text-center max-w-3xl">
-                <Reveal delay="100">
+                <Reveal delay="100" immediate>
                     <h1 className="font-bold text-4xl leading-tight sm:text-6xl sm:leading-[1.1] mt-6 max-w-2xl">Bridging Mechatronics &amp; Code:</h1>
                 </Reveal>
-                <Reveal delay="200">
+                <Reveal delay="200" immediate>
                     <h2 className="text-4xl font-bold sm:text-6xl mt-2 bg-linear-to-br from-primary to-secondary dark:from-tertiary dark:to-secondary bg-clip-text text-transparent sm:leading-[1.1] max-w-2xl">Full-Stack Solutions &amp; Business Automation.</h2>
                 </Reveal>
-                <Reveal delay="300">
+                <Reveal delay="300" immediate>
                     <p className="mt-6 text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl">I apply engineering logic to web development. I specialize in building responsive full-stack applications and automating business workflows, delivering clean code and practical solutions from concept to deployment.</p>
                 </Reveal>
-                <Reveal delay="400">
+                <Reveal delay="400" immediate>
                     <p className="mt-6 font-mono text-sm tracking-wider text-muted-foreground">
                         {capabilities.join("  /  ")}
                     </p>
                 </Reveal>
-                <Reveal delay="500" className="flex flex-col items-center">
+                <Reveal delay="500" immediate className="flex flex-col items-center">
                     <div className="mt-9 flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto">
                         <Button
                             onClick={() => scrollToView("contact")}
-                            className='cursor-pointer px-8 py-6 h-auto bg-linear-to-br from-primary to-secondary text-base text-white font-semibold shadow-lg shadow-primary/40 transition-all duration-300 hover:scale-[1.03] hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98]'
+                            className='cursor-pointer px-8 py-6 h-auto bg-linear-to-br from-primary to-secondary text-base text-white font-semibold shadow-lg shadow-primary/40 transition-[transform,box-shadow] duration-300 hover:scale-[1.03] hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98]'
                         >
                             Start a Project
                         </Button>

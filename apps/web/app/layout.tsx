@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
@@ -9,7 +9,6 @@ import ElectronThemeSync from "@/components/desktop/ElectronThemeSync";
 import { ThemeProvider } from "next-themes";
 
 // Self-hosted at build time (zero runtime font requests — required for the offline desktop app).
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-jakarta" });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains" });
 
@@ -31,6 +30,9 @@ export const metadata: Metadata = {
         "React",
     ],
     authors: [{ name: SITE_NAME }],
+    verification: {
+        google: "2nJ2vS3BR09ScS2fBNtftH9_PhwL6jU2VWB3_jGVtSs",
+    },
     alternates: {
         canonical: "/",
     },
@@ -57,7 +59,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 "h-full",
                 "antialiased",
                 "font-sans",
-                inter.variable,
                 jakarta.variable,
                 jetbrainsMono.variable,
             )}
