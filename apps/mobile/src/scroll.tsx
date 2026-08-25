@@ -19,6 +19,8 @@ type ScrollContextValue = {
   /** UI-thread scroll position — never read during render. */
   scrollY: SharedValue<number>;
   viewportHeight: number;
+  contentHeight: number;
+  setContentHeight: (height: number) => void;
   activeSection: Section | '';
   onScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
   trackSection: (section: Section) => (e: LayoutChangeEvent) => void;
@@ -33,6 +35,7 @@ export function ScrollProvider({ children }: { children: ReactNode }) {
   const sectionTops = useSharedValue<Partial<Record<Section, number>>>({});
   const activeSectionSV = useSharedValue<Section | ''>('');
   const { height: viewportHeight } = useWindowDimensions();
+  const [contentHeight, setContentHeight] = useState(0);
   const [activeSection, setActiveSection] = useState<Section | ''>('');
 
   const computeActive = (y: number) => {
@@ -64,7 +67,16 @@ export function ScrollProvider({ children }: { children: ReactNode }) {
 
   return (
     <ScrollContext.Provider
-      value={{ scrollY, viewportHeight, activeSection, onScroll, trackSection, getSectionTop }}
+      value={{
+        scrollY,
+        viewportHeight,
+        contentHeight,
+        setContentHeight,
+        activeSection,
+        onScroll,
+        trackSection,
+        getSectionTop,
+      }}
     >
       {children}
     </ScrollContext.Provider>
