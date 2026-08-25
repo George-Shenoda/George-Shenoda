@@ -99,8 +99,17 @@ function PortfolioApp() {
       const top = getSectionTop(section);
       if (top != null && scrollRef.current) {
         // Account for sticky navbar height + safe area top + scroll margin
-        const navbarOffset = 80;
+        const navbarOffset = 100; // increased to account for actual navbar height
         scrollRef.current.scrollTo({ y: Math.max(0, top - navbarOffset), animated: true });
+      } else if (scrollRef.current) {
+        // Fallback: scroll to approximate position if section not yet measured
+        const fallbackTops: Record<Section, number> = {
+          workflow: 600, // after Hero (~500-600px)
+          projects: 1800, // after Hero + Workflow + BusinessSection
+          contact: 3000, // near bottom
+        };
+        const navbarOffset = 100;
+        scrollRef.current.scrollTo({ y: Math.max(0, fallbackTops[section] - navbarOffset), animated: true });
       }
     },
     [getSectionTop]
