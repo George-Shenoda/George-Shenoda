@@ -1,28 +1,41 @@
-# Plan — Google Analytics (gtag.js)
+# Plan — Firebase Analytics (Android now, iOS prepped)
 
-## Branches: feat/google-analytics → chore/remove-hardcoded-ga-id → chore/rename-ga-env-var
+## Branch: feat/firebase-analytics
 
-User request: install GA4 gtag.js (`G-JMPFJDFM5T`) on every page, remove any
-hardcoded ID from source, and silence Vercel's "public framework prefix" warning
-when saving the env var.
+User completed the GA→Firebase wizard manually after the app-stream flake;
+`google-services.json` provided (package `com.georgeshenoda.portfolio`,
+project `geogrge-shenoda`). Approved scope: full native SDK (Expo Go dropped),
+Android wired now, iOS prepared but not activated.
 
-### Final approach
+### Changes
 
-1. `apps/web/components/Analytics.tsx` — `next/script` wrapper
-   - `strategy="afterInteractive"` (non render-blocking; LCP-safe)
-   - **ID read exclusively from `GOOGLE_ANALYTICS_ID`; no hardcoded fallback —
-     renders nothing when unset**
-   - No `NEXT_PUBLIC_` prefix: Analytics is a Server Component, so the value is
-     interpolated into HTML server-side and stays out of the client bundle
-     (this also clears Vercel's public-prefix warning on save)
-2. Local `apps/web/.env` (untracked): `GOOGLE_ANALYTICS_ID=G-JMPFJDFM5T`
-3. **User follow-up in Vercel:** env var name is now `GOOGLE_ANALYTICS_ID`
-   (see README); analytics stays off until set
-4. README documents the variable as server-side-only
+1. Move `google-services.json` → `apps/mobile/google-services.json` (committed;
+   Firebase-classified non-secret; required in-repo for EAS cloud builds)
+2. Deps: `@react-native-firebase/app` + `@react-native-firebase/analytics`
+   via `npx expo install` (new-arch compatible; Expo SDK 57 minSdk 24 ≥ requirement)
+3. `apps/mobile/app.json`:
+   - `"android": { "googleServicesFile": "./google-services.json" }`
+   - plugins += `"@react-native-firebase/app"`
+   - iOS `googleServicesFile` NOT added yet — activates when user provides
+     `GoogleService-Info.plist` (documented in README)
+4. New `apps/mobile/src/analytics.ts`: safe wrapper — every call try/catch
+   no-op so analytics can never crash the app
+5. Instrumentation:
+   - `logAppOpen()` on mount in PortfolioApp
+   - `screen_view` for workflow/projects/contact deduped on `activeSection`
+     change (existing ScrollProvider state — no new scroll logic)
+6. README: dev workflow now requires a dev build (`npx expo run:android`);
+   Expo Go no longer supported for this app; iOS plist steps documented
 
 ### Verification
 
-- [ ] typecheck/lint/build green
-- [ ] Built homepage HTML contains `googletagmanager.com/gtag/js` (env present locally)
+- [ ] mobile typecheck green
+- [ ] expo config sanity (`npx expo config --type prebuild` dry check or doctor)
+- [ ] Runtime verify needs device/emulator (user side): DebugView instructions in README
 - [ ] Commit message = branch name; push; PR → main
 
+### Out of scope / later
+
+- iOS `GoogleService-Info.plist` wiring (file not yet available)
+- Custom events beyond app_open + screen_view
+- New release tag (ships with next tagged APK)
