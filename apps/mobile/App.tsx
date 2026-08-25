@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { Linking, ScrollView, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { ScrollView, useColorScheme, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   useFonts,
@@ -15,56 +15,75 @@ import {
   JetBrainsMono_400Regular,
 } from '@expo-google-fonts/jetbrains-mono';
 import Hero from './src/components/Hero';
-import WorkflowCarousel from './src/components/WorkflowCarousel';
+import Workflow from './src/components/Workflow';
 import BusinessSection from './src/components/BusinessSection';
 import ProjectsSection from './src/components/ProjectsSection';
+import TrustSection from './src/components/TrustSection';
 import ContactForm from './src/components/ContactForm';
 import Navbar from './src/components/Navbar';
 import Footer from './src/components/Footer';
 import { ScrollProvider, useScroll, type Section } from './src/scroll';
-import { usePalette } from './src/theme';
+import { ThemeModeProvider, usePalette, useThemeMode } from './src/theme-mode';
+import { SITE_URL } from './src/config';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+/** Web sections get scroll-margin-top: 5rem; mirror that when jumping. */
+const SCROLL_MARGIN = 80;
+
 function PortfolioApp() {
-  const colorScheme = useColorScheme();
-  const palette = usePalette(colorScheme);
-  const { onScroll, trackSection, getSectionTop } = useScroll();
+  const palette = usePalette();
+  const { scheme } = useThemeMode();
+  const { onScroll, trackSection, getSectionTop, setContentHeight } = useScroll();
 
   const scrollRef = useRef<ScrollView>(null);
 
   const navigate = useCallback(
     (section: Section) => {
-      const y = getSectionTop(section);
-      if (y != null && scrollRef.current) {
-        scrollRef.current.scrollTo({ y, animated: true });
+      const top = getSectionTop(section);
+      if (top != null && scrollRef.current) {
+        scrollRef.current.scrollTo({ y: Math.max(0, top - SCROLL_MARGIN), animated: true });
       }
     },
     [getSectionTop]
   );
 
+  const scrollTop = useCallback(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
+
+  // Step 14 replaces both with the offline CV sheet.
+  const openResumePdf = useCallback(() => {
+    Linking.openURL(`${SITE_URL}/assets/resume.pdf`).catch(() => {});
+  }, []);
+
   return (
     <View style={{ flex: 1, backgroundColor: palette.background }}>
-      <StatusBar style={colorScheme === 'light' ? 'dark' : 'light'} />
-      <Navbar palette={palette} onNavigate={navigate} />
+      <StatusBar style={scheme === 'light' ? 'dark' : 'light'} />
+      <Navbar onNavigate={navigate} onScrollTop={scrollTop} />
       <ScrollView
         ref={scrollRef}
         onScroll={onScroll}
+        onContentSizeChange={setContentHeight}
         scrollEventThrottle={16}
-        contentContainerStyle={{ paddingBottom: 0 }}
       >
-        <Hero palette={palette} onNavigate={navigate} />
+        <Hero
+          onNavigate={navigate}
+          onDownloadCv={openResumePdf}
+          onViewCv={openResumePdf}
+        />
         <View onLayout={trackSection('workflow')}>
-          <WorkflowCarousel palette={palette} />
+          <Workflow />
         </View>
-        <BusinessSection palette={palette} />
+        <BusinessSection />
         <View onLayout={trackSection('projects')}>
-          <ProjectsSection palette={palette} />
+          <ProjectsSection />
         </View>
+        <TrustSection />
         <View onLayout={trackSection('contact')}>
-          <ContactForm palette={palette} />
+          <ContactForm />
         </View>
-        <Footer palette={palette} />
+        <Footer onNavigate={navigate} />
       </ScrollView>
     </View>
   );
@@ -77,7 +96,7 @@ export default function App() {
     Inter_600SemiBold,
     Inter_700Bold,
   });
-  const [monoLoaded] = useFonts({ JetBrainsMono_400Regular });
+  const [monoLoaded] = useMonoFonts({ JetBrainsMono_400Regular });
   const ready = interLoaded && monoLoaded;
 
   useEffect(() => {
@@ -90,9 +109,11 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <ScrollProvider>
-        <PortfolioApp />
-      </ScrollProvider>
+      <ThemeModeProvider>
+        <ScrollProvider>
+          <PortfolioApp />
+        </ScrollProvider>
+      </ThemeModeProvider>
     </SafeAreaProvider>
   );
 }

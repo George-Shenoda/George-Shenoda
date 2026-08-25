@@ -56,3 +56,6 @@ strix_runs/
 certs/
 *.pfx
 *.p12
+
+# expo export output
+apps/mobile/dist

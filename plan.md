@@ -162,8 +162,8 @@ all apps startup: try remote → fallback to bundled snapshot (offline-safe)
 
 # PHASE 2 — CV System, Offline Mode & Mobile Parity Redesign
 
-> Status: **IN PROGRESS.** Steps 8–12 DONE (commits: 192b922, d7efde8, f1b89a4, 9fd5cda, 194c719 + foundation below).
-> ▶▶ RESUME HERE (next session): **Step 13 — Mobile sections 1:1 port.** Steps 8–11 verified green; Step 12 typecheck + `expo export --platform android` (Hermes 2.5MB bundle) both green.
+> Status: **IN PROGRESS.** Steps 8–13 DONE (commits: 192b922, d7efde8, f1b89a4, 9fd5cda, 194c719, e645626 + foundation below).
+> ▶▶ RESUME HERE (next session): **Step 14 — Mobile CV + connectivity.** Steps 8–12 verified green; Step 13 typecheck + `expo export --platform android` (Hermes 4.6MB bundle) both green.
 > Work through steps in order; tick boxes + note commit hashes as each lands. One commit per step.
 
 ## Goal
@@ -232,14 +232,14 @@ all apps startup: try remote → fallback to bundled snapshot (offline-safe)
 
 ## Step 13 — Mobile sections 1:1 port `[commit: feat(mobile): 1:1 section parity with web]`
 
-- [ ] Navbar: brand 20 bold · 44×44 theme button w/ Light/Dark/System popover (radius 22, p6, 100ms fade-zoom-drop) · 44×44 hamburger dropdown (min-w 176, rounded-22, active item primary semibold) · blur bg + scroll shadow · progress bar
-- [ ] Hero: glow ellipse + 28px dot-grid backdrops · padding 20/80/96 · H1+H2 36px bold (H2 gradient-clipped, MaskedView auto-height — fixes fixed-96 bug) · para 16/26 muted max-w 576 · mono 14 capabilities · stacked full-width CTAs gap-3 mt-9 (gradient "Start a Project", outlined "View My Work", both 72px tall radius 26 scale .98) · muted "Download CV" FileDown text-link mt-5 · bouncing chevron
-- [ ] Workflow: replace carousel with vertical stacked cards (band, H2 30 mb-5, cards p24/r14/gap16, alternating 18px tinted icon tiles: Lightbulb/DraftingCompass/Code/Rocket)
-- [ ] Business: py-96 px-16 gap-48, checklist upgraded to 20px CheckCircle icons + 16px medium labels (gear graphic stays hidden = web <768px truth)
-- [ ] Projects: full-width cards (screen−32), r14/shadow-md, title row 20 bold + ArrowUpRight 20 muted, chips 13px px12/py4 pill secondary tints, whole card pressable, bundled images keyed by `id`, AsyncStorage last-cached fallback + caption
-- [ ] Trust (NEW section): raw-bg strip between bands, stats `{N}+ / 24h / 100%` 36px JetBrains Mono primary + labels 16 medium muted (gaps 56×32), three Cards mt-56 gap-24 delays 0/150/300 (CalendarCheck/FileText/KeyRound)
-- [ ] Contact: band wrapper p-24, elevated card r22 shadow-2xl `#161d1d`/white, H2 30 mb-4, inputs r14 focus-primary border, error banner (destructive/10, AlertCircle 20), full-width gradient submit 72px r26 + Loader2 spin, caption "Typically replies within 24 hours…", success screen (emerald CheckCircle2 64-circle), outbox queued banner
-- [ ] Footer: centered vertical stack, gaps 16, padding 32, copyright 14px
+- [x] Navbar: brand 20 bold · 44×44 theme button w/ Light/Dark/System popover (radius 22, p6, 100ms fade-zoom-drop) · 44×44 hamburger dropdown (min-w 176, rounded-22, active item primary semibold) · blur bg + scroll shadow · progress bar *(preference persisted via new ThemeModeProvider/AsyncStorage; scroll shadow crossfades a static gradient layer per animate-expo skill)*
+- [x] Hero: glow ellipse + 28px dot-grid backdrops · padding 20/80/96 · H1+H2 36px bold (H2 gradient-clipped, MaskedView auto-height — fixes fixed-96 bug) · para 16/26 muted max-w 576 · mono 14 capabilities · stacked full-width CTAs gap-3 mt-9 (gradient "Start a Project", outlined "View My Work", both 72px tall radius 26 scale .98) · muted "Download CV" FileDown text-link mt-5 · bouncing chevron *(CTA order fixed to web truth: Start a Project → contact; glow approximated as radial gradient)*
+- [x] Workflow: replace carousel with vertical stacked cards (band, H2 30 mb-5, cards p24/r14/gap16, alternating 18px tinted icon tiles: Lightbulb/DraftingCompass/Code/Rocket) *(WorkflowCarousel.tsx deleted)*
+- [x] Business: py-96 px-16 gap-48, checklist upgraded to 20px CheckCircle icons + 16px medium labels (gear graphic stays hidden = web <768px truth)
+- [x] Projects: full-width cards (screen−32), r14/shadow-md, title row 20 bold + ArrowUpRight 20 muted, chips 13px px12/py4 pill secondary tints, whole card pressable, bundled images keyed by `id`, AsyncStorage last-cached fallback + caption
+- [x] Trust (NEW section): raw-bg strip between bands, stats `{N}+ / 24h / 100%` 36px JetBrains Mono primary + labels 16 medium muted (gaps 56×32), three Cards mt-56 gap-24 delays 0/150/300 (CalendarCheck/FileText/KeyRound)
+- [x] Contact: band wrapper p-24, elevated card r22 shadow-2xl `#161d1d`/white, H2 30 mb-4, inputs r14 focus-primary border, error banner (destructive/10, AlertCircle 20), full-width gradient submit 72px r26 + Loader2 spin, caption "Typically replies within 24 hours…", success screen (emerald CheckCircle2 64-circle), outbox queued banner *(AsyncStorage outbox adapter added; flush runs on mount — NetInfo reconnect/launch triggers remain Step 14)*
+- [x] Footer: centered vertical stack, gaps 16, padding 32, copyright 14px *(nav links navigate like web)*
 
 ## Step 14 — Mobile CV + connectivity `[commit: feat(mobile): offline cv sheet + auto-flush queue]`
 

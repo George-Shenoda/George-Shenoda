@@ -1,13 +1,51 @@
-import { StyleSheet, Text, View } from 'react-native';
-import type { Palette } from '../theme';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { usePalette } from '../theme-mode';
+import type { Section } from '../scroll';
 
-function Footer({ palette }: { palette: Palette }) {
+type FooterProps = {
+  onNavigate: (section: Section) => void;
+};
+
+const links: Array<{ label: string; section: Section }> = [
+  { label: 'Workflow', section: 'workflow' },
+  { label: 'Projects', section: 'projects' },
+  { label: 'Contact', section: 'contact' },
+];
+
+function Footer({ onNavigate }: FooterProps) {
+  const palette = usePalette();
+
   return (
-    <View style={[styles.bar, { backgroundColor: palette.band }]}>
-      <Text style={[styles.brand, { color: palette.primary }]}>
+    <View
+      style={[
+        styles.stack,
+        {
+          backgroundColor: palette.band,
+          paddingHorizontal: 32,
+          paddingVertical: 32,
+          gap: 16,
+        },
+      ]}
+    >
+      <Text style={{ color: palette.primary, fontSize: 20, fontWeight: '700' }}>
         George Shenoda
       </Text>
-      <Text style={{ color: palette.mutedText, fontSize: 12 }}>
+      <View style={styles.row}>
+        {links.map(({ label, section }) => (
+          <Pressable
+            key={section}
+            onPress={() => onNavigate(section)}
+            hitSlop={8}
+            accessibilityRole="link"
+            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+          >
+            <Text style={{ color: palette.mutedText, fontSize: 14, fontWeight: '500' }}>
+              {label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+      <Text style={{ color: palette.mutedText, fontSize: 14 }}>
         © {new Date().getFullYear()} George Shenoda. All rights reserved.
       </Text>
     </View>
@@ -15,17 +53,13 @@ function Footer({ palette }: { palette: Palette }) {
 }
 
 const styles = StyleSheet.create({
-  bar: {
-    padding: 24,
+  stack: {
+    alignItems: 'center',
+  },
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  brand: {
-    fontSize: 20,
-    fontWeight: '700',
+    gap: 20,
   },
 });
 
