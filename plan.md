@@ -1,28 +1,41 @@
 # Plan — Firebase Analytics (Android now, iOS prepped)
 
-## Branch: feat/firebase-analytics (rebuilt — secret scrub)
+## Branch: feat/firebase-analytics
 
-> **Incident note:** the first push of this branch committed
-> `apps/mobile/google-services.json`; GitHub flagged the embedded API key.
-> Remediation (user-approved): key rotated in Google Cloud (old `AIzaSyBHdX…`
-> deleted, fresh config downloaded), branch history rebuilt without the file and
-> force-pushed, config now injected via `GOOGLE_SERVICES_JSON_B64` Actions secret.
-> File is gitignored locally.
+User completed the GA→Firebase wizard manually after the app-stream flake;
+`google-services.json` provided (package `com.georgeshenoda.portfolio`,
+project `geogrge-shenoda`). Approved scope: full native SDK (Expo Go dropped),
+Android wired now, iOS prepared but not activated.
 
-## Changes
+### Changes
 
-1. `apps/mobile/google-services.json` — **untracked** local file only (gitignored)
-2. Deps: `@react-native-firebase/app` + `@react-native-firebase/analytics` v26.3.2
-3. `apps/mobile/app.json`: android.googleServicesFile + `@react-native-firebase/app` plugin
-4. New `apps/mobile/src/analytics.ts`: fail-safe wrapper (v26 named-export API)
-5. Instrumentation: `app_open` on launch; deduped `screen_view` per section via existing activeSection state
-6. `.github/workflows/release.yml`: Android job decodes `GOOGLE_SERVICES_JSON_B64`
-   into place before `eas build`, fail-fast with clear error if unset
-7. README: untracked-config setup (local + CI), rotation playbook, DebugView, iOS prep
+1. Move `google-services.json` → `apps/mobile/google-services.json` (committed;
+   Firebase-classified non-secret; required in-repo for EAS cloud builds)
+2. Deps: `@react-native-firebase/app` + `@react-native-firebase/analytics`
+   via `npx expo install` (new-arch compatible; Expo SDK 57 minSdk 24 ≥ requirement)
+3. `apps/mobile/app.json`:
+   - `"android": { "googleServicesFile": "./google-services.json" }`
+   - plugins += `"@react-native-firebase/app"`
+   - iOS `googleServicesFile` NOT added yet — activates when user provides
+     `GoogleService-Info.plist` (documented in README)
+4. New `apps/mobile/src/analytics.ts`: safe wrapper — every call try/catch
+   no-op so analytics can never crash the app
+5. Instrumentation:
+   - `logAppOpen()` on mount in PortfolioApp
+   - `screen_view` for workflow/projects/contact deduped on `activeSection`
+     change (existing ScrollProvider state — no new scroll logic)
+6. README: dev workflow now requires a dev build (`npx expo run:android`);
+   Expo Go no longer supported for this app; iOS plist steps documented
 
-## Verification
+### Verification
 
-- [x] mobile typecheck green
-- [x] prebuild config resolves plugin + googleServicesFile
-- [ ] Runtime DebugView check on device (user side)
-- [ ] Branch contains no google-services.json in history (rebuilt from main)
+- [ ] mobile typecheck green
+- [ ] expo config sanity (`npx expo config --type prebuild` dry check or doctor)
+- [ ] Runtime verify needs device/emulator (user side): DebugView instructions in README
+- [ ] Commit message = branch name; push; PR → main
+
+### Out of scope / later
+
+- iOS `GoogleService-Info.plist` wiring (file not yet available)
+- Custom events beyond app_open + screen_view
+- New release tag (ships with next tagged APK)

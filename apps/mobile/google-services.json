@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "826370614887",
+    "project_id": "geogrge-shenoda",
+    "storage_bucket": "geogrge-shenoda.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:826370614887:android:d7490b4b9a3447d0aed6c2",
+        "android_client_info": {
+          "package_name": "com.georgeshenoda.portfolio"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBHdXNOFAhhcdR_GGm6tOLRFGvHWcInseo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -67,21 +67,13 @@ npx expo start          # then start Metro bundler
 
 - **Web/Desktop**: GA4 gtag.js via `GOOGLE_ANALYTICS_ID` (see env table).
 - **Mobile**: Firebase Analytics (`@react-native-firebase/*`), configured by `apps/mobile/google-services.json`.
-  - **This file is intentionally NOT committed** (contains an API key). Setup:
-    - **Locally**: place your `google-services.json` at `apps/mobile/google-services.json` (gitignored).
-    - **CI (release workflow)**: add an Actions secret `GOOGLE_SERVICES_JSON_B64` = base64 of the file:
-      ```powershell
-      [Convert]::ToBase64String([IO.File]::ReadAllBytes("apps\mobile\google-services.json")) | Set-Clipboard
-      ```
-      The Android job decodes it before `eas build` and fails fast if missing.
   - Events: `app_open` + `screen_view` per section (`home`, `workflow`, `projects`, `contact`) — all calls are fail-safe no-ops.
   - Verify on device with Debug View:
     ```bash
     adb shell setprop debug.firebase.analytics.app com.georgeshenoda.portfolio
     ```
     then check Firebase console → Analytics → DebugView.
-  - If a config ever leaks: rotate the key in Google Cloud → Credentials, re-download from Firebase console, update the local file + Actions secret.
-  - **iOS prep** (activate when an Apple build is needed): register the iOS app in Firebase with bundle id `com.georgeshenoda.portfolio`, download `GoogleService-Info.plist` into `apps/mobile/` (gitignored), then add `"ios": { "googleServicesFile": "./GoogleService-Info.plist" }` to `app.json`. The JS code needs no changes.
+  - **iOS prep** (activate when an Apple build is needed): register the iOS app in Firebase with bundle id `com.georgeshenoda.portfolio`, download `GoogleService-Info.plist` into `apps/mobile/`, then add `"ios": { "googleServicesFile": "./GoogleService-Info.plist" }` to `app.json`. The JS code needs no changes.
 
 ## Production Build
 
