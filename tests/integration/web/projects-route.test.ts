@@ -3,11 +3,13 @@ import { projects } from "@portfolio/shared";
 import { GET } from "@/app/api/projects/route";
 
 describe("GET /api/projects", () => {
-  it("returns the shared projects list as JSON", async () => {
+  it("returns the shared projects list as JSON with open CORS", async () => {
     const response = await GET();
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("application/json");
+    // Desktop shell (http://127.0.0.1:<port>) reads this cross-origin.
+    expect(response.headers.get("access-control-allow-origin")).toBe("*");
     expect(await response.json()).toEqual(projects);
   });
 

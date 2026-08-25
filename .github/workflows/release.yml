@@ -4,12 +4,17 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
+env:
+  # Setup files are built on every run; publishing to GitHub Releases only on tags.
+  IS_TAG: ${{ startsWith(github.ref, 'refs/tags/v') }}
+
 jobs:
-  # Desktop builds (Windows, macOS, Linux)
+  # Desktop builds (Windows .exe setup, macOS dmg, Linux AppImage/deb)
   desktop:
     name: Desktop (${{ matrix.os }})
     strategy:
@@ -54,12 +59,27 @@ jobs:
           if [ -n "$APPLE_APP_SPECIFIC_PASSWORD_SECRET" ]; then echo "APPLE_APP_SPECIFIC_PASSWORD=$APPLE_APP_SPECIFIC_PASSWORD_SECRET" >> "$GITHUB_ENV"; fi
           if [ -n "$APPLE_TEAM_ID_SECRET" ]; then echo "APPLE_TEAM_ID=$APPLE_TEAM_ID_SECRET" >> "$GITHUB_ENV"; fi
 
-      - name: Package and publish installers
-        run: npx electron-builder --publish always
+      - name: Package installers (publish only on tags)
+        run: npx electron-builder --publish ${{ env.IS_TAG == 'true' && 'always' || 'never' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # Android build (skipped unless EXPO_TOKEN secret is set)
+      - name: Upload installer artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.os }}
+          path: |
+            apps/desktop/release/*.exe
+            apps/desktop/release/*.dmg
+            apps/desktop/release/*.zip
+            apps/desktop/release/*.AppImage
+            apps/desktop/release/*.deb
+          if-no-files-found: error
+          retention-days: 30
+
+  # Android build — real .apk via the `preview` EAS profile (production builds an
+  # app-bundle/.aab for Play Store, not a sideloadable APK).
+  # Skipped unless EXPO_TOKEN secret is set.
   android:
     name: Android
     runs-on: ubuntu-latest
@@ -90,7 +110,7 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          eas build --platform android --profile production --non-interactive --wait --json > build.json
+          eas build --platform android --profile preview --non-interactive --wait --json > build.json
           ARTIFACT_URL=$(node -e "const b=JSON.parse(require('fs').readFileSync('build.json','utf8'));console.log(b[0].artifacts.buildUrl)")
           echo "Downloading from $ARTIFACT_URL"
           curl -fL "$ARTIFACT_URL" -o app-release.apk
@@ -152,10 +172,11 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-  # Create GitHub Release with all artifacts
+  # Attach all setup files to the GitHub Release (tags only)
   release:
     name: Create Release
     needs: [desktop, android, ios]
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

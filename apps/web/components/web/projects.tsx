@@ -9,6 +9,23 @@ import { Button } from "@/components/ui/button";
 const INITIAL_COUNT = 6;
 const LOAD_STEP = 6;
 
+/**
+ * Site origin baked in at build time (empty string in env-less dev).
+ * Desktop builds use it to load live data from the deployed site instead of
+ * the bundled snapshot; "" degrades to same-origin relative URLs.
+ */
+const LIVE_BASE = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
+
+async function fetchProjectsJson(url: string): Promise<Project[] | null> {
+    try {
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        return await res.json();
+    } catch {
+        return null;
+    }
+}
+
 function Projects() {
     // Bundled snapshot renders immediately (SSR-safe); remote-first refresh
     // replaces it on mount so installed apps pick up data edits without reinstall.
@@ -17,14 +34,17 @@ function Projects() {
 
     useEffect(() => {
         let cancelled = false;
-        fetch("/api/projects")
-            .then((res) => (res.ok ? res.json() : null))
-            .then((data: Project[] | null) => {
+        // Live site first (shared with mobile); fall back to the bundled API so
+        // an offline desktop app still shows its snapshot.
+        fetchProjectsJson(`${LIVE_BASE}/api/projects`)
+            .then((live) =>
+                live && live.length > 0 ? live : fetchProjectsJson("/api/projects")
+            )
+            .then((data) => {
                 if (!cancelled && Array.isArray(data) && data.length > 0) {
                     setProjects(data);
                 }
-            })
-            .catch(() => {});
+            });
         return () => {
             cancelled = true;
         };
@@ -57,7 +77,7 @@ function Projects() {
                                 title={project.title}
                                 techstack={project.techstack}
                                 link={project.link}
-                                image={project.image}
+                                image={`${LIVE_BASE}${project.image}`}
                             />
                         </Reveal>
                     ))}
