@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { Linking, ScrollView, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ScrollView, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -22,9 +22,9 @@ import TrustSection from './src/components/TrustSection';
 import ContactForm from './src/components/ContactForm';
 import Navbar from './src/components/Navbar';
 import Footer from './src/components/Footer';
+import CVSheet from './src/components/CVSheet';
 import { ScrollProvider, useScroll, type Section } from './src/scroll';
 import { ThemeModeProvider, usePalette, useThemeMode } from './src/theme-mode';
-import { SITE_URL } from './src/config';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -52,10 +52,10 @@ function PortfolioApp() {
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   }, []);
 
-  // Step 14 replaces both with the offline CV sheet.
-  const openResumePdf = useCallback(() => {
-    Linking.openURL(`${SITE_URL}/assets/resume.pdf`).catch(() => {});
-  }, []);
+  // Step 14: both hero CV affordances open the offline CV sheet.
+  const [cvOpen, setCvOpen] = useState(false);
+  const openCv = useCallback(() => setCvOpen(true), []);
+  const closeCv = useCallback(() => setCvOpen(false), []);
 
   return (
     <View style={{ flex: 1, backgroundColor: palette.background }}>
@@ -69,8 +69,8 @@ function PortfolioApp() {
       >
         <Hero
           onNavigate={navigate}
-          onDownloadCv={openResumePdf}
-          onViewCv={openResumePdf}
+          onDownloadCv={openCv}
+          onViewCv={openCv}
         />
         <View onLayout={trackSection('workflow')}>
           <Workflow />
@@ -85,6 +85,7 @@ function PortfolioApp() {
         </View>
         <Footer onNavigate={navigate} />
       </ScrollView>
+      <CVSheet visible={cvOpen} onClose={closeCv} />
     </View>
   );
 }

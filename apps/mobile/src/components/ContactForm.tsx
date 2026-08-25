@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
+  AppState,
   Pressable,
   Text,
   TextInput,
   View,
   type TextStyle,
 } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   Easing,
@@ -53,18 +55,39 @@ function ContactForm() {
   );
   outboxRef.current = outbox;
 
-  // Flush anything queued from a previous offline session on mount.
-  // Step 14 adds NetInfo reconnect/launch triggers on top of this.
+  // Auto-flush triggers: launch, reconnect (NetInfo), and app foreground
+  // (AppState→active). Connectivity is checked before flushing so offline
+  // attempts don't burn the outbox's retry budget.
   useEffect(() => {
     let cancelled = false;
-    outbox
-      .flush()
-      .then((result) => {
+
+    const flush = async () => {
+      try {
+        const net = await NetInfo.fetch();
+        if (!net.isConnected) return;
+        const result = await outbox.flush();
         if (!cancelled) setQueuedCount(result.remaining.length);
-      })
-      .catch(() => {});
+      } catch {
+        // storage unavailable — leave the queue untouched
+      }
+    };
+
+    void flush();
+
+    const unsubscribeNet = NetInfo.addEventListener((state) => {
+      if (state.isConnected && state.isInternetReachable !== false) {
+        void flush();
+      }
+    });
+
+    const appStateSub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void flush();
+    });
+
     return () => {
       cancelled = true;
+      unsubscribeNet();
+      appStateSub.remove();
     };
   }, [outbox]);
 
