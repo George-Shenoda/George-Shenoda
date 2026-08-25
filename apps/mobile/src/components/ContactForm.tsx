@@ -30,8 +30,11 @@ import { createAsyncStorageStorage } from '../outbox-storage';
 import { usePalette } from '../theme-mode';
 
 const OUTBOX_KEY = 'portfolio-contact-outbox';
+const COOLDOWN_MS = 10_000;
 
-type Status = 'idle' | 'loading' | 'success' | 'error' | 'queued';
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+type Status = 'idle' | 'loading' | 'success' | 'error' | 'queued' | 'cooldown';
 
 function ContactForm() {
   const palette = usePalette();
@@ -39,11 +42,14 @@ function ContactForm() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
+  const [website, setWebsite] = useState('');
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [queuedCount, setQueuedCount] = useState(0);
+  const [cooldownUntil, setCooldownUntil] = useState(0);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const outboxRef = useRef<Outbox | null>(null);
+  const cooldownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const outbox = useMemo(
     () =>
@@ -54,6 +60,21 @@ function ContactForm() {
     []
   );
   outboxRef.current = outbox;
+
+  // Cooldown timer
+  useEffect(() => {
+    if (status === 'success' && cooldownUntil > Date.now()) {
+      setStatus('cooldown');
+      const remaining = cooldownUntil - Date.now();
+      cooldownTimerRef.current = setTimeout(() => {
+        setStatus('idle');
+        setCooldownUntil(0);
+      }, remaining);
+    }
+    return () => {
+      if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current);
+    };
+  }, [status, cooldownUntil]);
 
   // Auto-flush triggers: launch, reconnect (NetInfo), and app foreground
   // (AppState→active). Connectivity is checked before flushing so offline
@@ -101,9 +122,24 @@ function ContactForm() {
   }
 
   async function handleSubmit() {
+    if (status === 'cooldown') return;
+
     if (!name.trim() || !email.trim() || !message.trim()) {
       setStatus('error');
       setErrorMessage('Please fill in your name, email, and message.');
+      return;
+    }
+
+    if (!EMAIL_REGEX.test(email.trim())) {
+      setStatus('error');
+      setErrorMessage('Please enter a valid email address.');
+      return;
+    }
+
+    // Honeypot check
+    if (website.trim().length > 0) {
+      setStatus('error');
+      setErrorMessage('Spam detected.');
       return;
     }
 
@@ -111,21 +147,25 @@ function ContactForm() {
     setErrorMessage('');
 
     try {
-      const result = await submitContact(SITE_URL, { name, email, message });
+      const result = await submitContact(SITE_URL, { name, email, message, website });
 
       if (result.success) {
         setStatus('success');
+        const until = Date.now() + COOLDOWN_MS;
+        setCooldownUntil(until);
         setName('');
         setEmail('');
         setMessage('');
+        setWebsite('');
       } else if (result.networkError && outboxRef.current) {
         // Offline: persist to the outbox; it auto-sends once connectivity returns.
-        await outboxRef.current.add({ name, email, message });
+        await outboxRef.current.add({ name, email, message, website });
         setQueuedCount(await outboxRef.current.pendingCount());
         setStatus('queued');
         setName('');
         setEmail('');
         setMessage('');
+        setWebsite('');
       } else {
         setStatus('error');
         setErrorMessage(result.error ?? 'Something went wrong. Please try again.');
@@ -172,6 +212,8 @@ function ContactForm() {
   const spinnerStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${spinnerRotation.get()}deg` }],
   }));
+
+  const isFormDisabled = status === 'loading' || status === 'cooldown';
 
   return (
     <View
@@ -331,6 +373,33 @@ function ContactForm() {
                   </Text>
                 </View>
               )}
+              {status === 'cooldown' && (
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: 16,
+                    marginBottom: 8,
+                    borderRadius: 14,
+                    backgroundColor: `${palette.primary}1A`,
+                    borderWidth: 1,
+                    borderColor: `${palette.primary}40`,
+                  }}
+                >
+                  <Loader2 size={20} color={palette.primary} />
+                  <Text
+                    style={{
+                      color: palette.primary,
+                      fontSize: 14,
+                      fontWeight: '500',
+                      flex: 1,
+                    }}
+                  >
+                    Please wait {Math.ceil((cooldownUntil - Date.now()) / 1000)}s before sending another message.
+                  </Text>
+                </View>
+              )}
 
               <View style={{ gap: 6 }}>
                 <Text style={labelStyle}>Name</Text>
@@ -342,11 +411,12 @@ function ContactForm() {
                     setName(value);
                     clearBanners();
                   }}
-                  editable={status !== 'loading'}
+                  editable={!isFormDisabled}
                   onFocus={() => setFocusedField('name')}
                   onBlur={() => setFocusedField(null)}
                   selectionColor={palette.primary}
                   style={fieldStyle('name')}
+                  maxLength={100}
                 />
               </View>
 
@@ -362,11 +432,12 @@ function ContactForm() {
                   }}
                   keyboardType="email-address"
                   autoCapitalize="none"
-                  editable={status !== 'loading'}
+                  editable={!isFormDisabled}
                   onFocus={() => setFocusedField('email')}
                   onBlur={() => setFocusedField(null)}
                   selectionColor={palette.primary}
                   style={fieldStyle('email')}
+                  maxLength={254}
                 />
               </View>
 
@@ -382,24 +453,42 @@ function ContactForm() {
                   }}
                   multiline
                   numberOfLines={5}
-                  editable={status !== 'loading'}
+                  editable={!isFormDisabled}
                   onFocus={() => setFocusedField('message')}
                   onBlur={() => setFocusedField(null)}
                   selectionColor={palette.primary}
                   style={[fieldStyle('message'), { minHeight: 120, textAlignVertical: 'top' }]}
+                  maxLength={5000}
                 />
               </View>
+
+              {/* Honeypot field - hidden from humans, filled by bots */}
+              <TextInput
+                value={website}
+                onChangeText={setWebsite}
+                editable={false}
+                style={{
+                  height: 0,
+                  width: 0,
+                  opacity: 0,
+                  position: 'absolute',
+                  left: -9999,
+                  pointerEvents: 'none',
+                }}
+                accessibilityElementsHidden={true}
+                importantForAccessibility="no-hide-descendants"
+              />
 
               <View style={{ alignItems: 'center', gap: 12, paddingTop: 8 }}>
                 <PressableScale
                   onPress={handleSubmit}
-                  disabled={status === 'loading'}
+                  disabled={isFormDisabled}
                   accessibilityLabel="Send Message"
                   style={{
                     width: '100%',
                     borderRadius: 26,
                     overflow: 'hidden',
-                    opacity: status === 'loading' ? 0.7 : 1,
+                    opacity: status === 'loading' || status === 'cooldown' ? 0.7 : 1,
                     shadowColor: palette.primary,
                     shadowOpacity: 0.3,
                     shadowRadius: 16,
@@ -433,6 +522,16 @@ function ContactForm() {
                             Sending Message...
                           </Text>
                         </>
+                      ) : status === 'cooldown' ? (
+                        <Text
+                          style={{
+                            color: '#ffffff',
+                            fontSize: 16,
+                            fontWeight: '600',
+                          }}
+                        >
+                          Wait {Math.ceil((cooldownUntil - Date.now()) / 1000)}s...
+                        </Text>
                       ) : (
                         <Text
                           style={{

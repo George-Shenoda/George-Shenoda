@@ -21,6 +21,25 @@ const OVERLAY = {
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
+const SENSITIVE_ENV_VARS = [
+  'EMAIL_USER',
+  'EMAIL_PASS',
+  'EMAIL_TO',
+  'GMAIL_USER',
+  'GMAIL_PASS',
+  'GMAIL_APP_PASSWORD',
+  'CONTACT_TO_EMAIL',
+  'CONTACT_AUTO_REPLY',
+];
+
+function filterEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const filtered = { ...env };
+  for (const key of SENSITIVE_ENV_VARS) {
+    delete filtered[key];
+  }
+  return filtered;
+}
+
 let win = null;
 let serverChild = null;
 
@@ -83,7 +102,7 @@ function startDevServer(port) {
   const cli = findNextCli();
   serverChild = spawn(process.execPath, [cli, 'dev', '-p', String(port)], {
     cwd: WEB_DIR,
-    env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
+    env: { ...filterEnv(process.env), ELECTRON_RUN_AS_NODE: '1' },
     stdio: 'inherit',
   });
   serverChild.once('exit', () => {
@@ -108,7 +127,7 @@ function startProdServer(port) {
   serverChild = spawn(process.execPath, [serverEntry], {
     cwd: path.dirname(serverEntry),
     env: {
-      ...process.env,
+      ...filterEnv(process.env),
       ELECTRON_RUN_AS_NODE: '1',
       NODE_ENV: 'production',
       PORT: String(port),
@@ -147,10 +166,22 @@ function createWindow(port) {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      webSecurity: true,
     },
   });
 
   win.once('ready-to-show', () => win.show());
+
+  // Block unexpected navigations (defense in depth)
+  win.webContents.on('will-navigate', (event, url) => {
+    const allowed = `http://127.0.0.1:${port}`;
+    if (!url.startsWith(allowed)) {
+      event.preventDefault();
+      if (/^https?:/i.test(url)) {
+        shell.openExternal(url);
+      }
+    }
+  });
 
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:/i.test(url)) {

@@ -18,7 +18,7 @@ export function BackButton() {
         <button
             type="button"
             onClick={handleBack}
-            className="no-print fixed top-30 left-6 z-50 inline-flex items-center gap-2 rounded-full bg-background px-4 py-2 text-sm font-medium text-foreground shadow-lg transition-all hover:bg-muted hover:scale-[1.03] active:scale-[0.98] print:hidden"
+            className="no-print fixed top-25 left-6 z-50 inline-flex items-center gap-2 rounded-full bg-background px-4 py-2 text-sm font-medium text-foreground shadow-lg transition-all hover:bg-muted hover:scale-[1.03] active:scale-[0.98] print:hidden"
         >
             <ArrowLeft className="size-4" />
             Back

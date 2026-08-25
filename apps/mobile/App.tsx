@@ -32,9 +32,6 @@ import { SITE_URL } from './src/config';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-/** Web sections get scroll-margin-top: 5rem; mirror that when jumping. */
-const SCROLL_MARGIN = 80;
-
 const CACHE_KEY = 'projects-cache-v1';
 
 type ProjectsCache = {
@@ -98,17 +95,19 @@ function PortfolioApp() {
     (section: Section) => {
       const top = getSectionTop(section);
       if (top != null && scrollRef.current) {
-        // Account for sticky navbar height + safe area top + scroll margin
-        const navbarOffset = 100; // increased to account for actual navbar height
+        // Account for sticky navbar height (insets.top + 78px content) + safe area
+        // Navbar is ~137px on notched iPhones (59px insets + 78px); use 140 for buffer
+        const navbarOffset = 140;
         scrollRef.current.scrollTo({ y: Math.max(0, top - navbarOffset), animated: true });
       } else if (scrollRef.current) {
-        // Fallback: scroll to approximate position if section not yet measured
+        // Fallback: approximate section positions from layout analysis
+        // Hero ~880, Workflow ~2462, BusinessSection ~2908, ProjectsSection ~5440, TrustSection ~6880, ContactForm ~7516
         const fallbackTops: Record<Section, number> = {
-          workflow: 600, // after Hero (~500-600px)
-          projects: 1800, // after Hero + Workflow + BusinessSection
-          contact: 3000, // near bottom
+          workflow: 960,
+          projects: 2990,
+          contact: 6960,
         };
-        const navbarOffset = 100;
+        const navbarOffset = 140;
         scrollRef.current.scrollTo({ y: Math.max(0, fallbackTops[section] - navbarOffset), animated: true });
       }
     },
