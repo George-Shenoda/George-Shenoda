@@ -12,6 +12,7 @@
     },
     "android": {
       "package": "com.georgeshenoda.portfolio",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#0d1515",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -27,7 +28,8 @@
       "expo-font",
       "expo-sharing",
       "expo-splash-screen",
-      "expo-asset"
+      "expo-asset",
+      "@react-native-firebase/app"
     ],
     "extra": {
       "eas": {
