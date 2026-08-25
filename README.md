@@ -92,7 +92,21 @@ The contact endpoint includes defense in depth:
 
 ## Release Workflow
 
-Tagging a version (e.g. `v0.1.2`) triggers `.github/workflows/release.yml`, which builds the desktop apps (Windows/macOS/Linux) and Android/iOS artifacts and publishes a GitHub Release.
+Tagging a version (e.g. `v0.1.2`) triggers `.github/workflows/release.yml`, which builds the desktop apps (Windows/macOS/Linux) and Android/iOS artifacts and publishes a GitHub Release with installable setup files:
+
+| Platform | Setup files |
+|----------|-------------|
+| Windows | NSIS installer `.exe` + portable `.exe` |
+| macOS | `.dmg` + `.zip` (Intel & Apple Silicon) |
+| Linux | `.AppImage` + `.deb` |
+| Android | `.apk` (EAS `preview` profile; requires `EXPO_TOKEN` secret) |
+| iOS | `.ipa` (disabled until signing credentials are configured) |
+
+The workflow can also be run manually (`workflow_dispatch`) to produce setup files without publishing — artifacts appear under the workflow run. Publishing to a GitHub Release only happens on tag pushes.
+
+### Adding a project (no tag needed)
+
+Project content updates do **not** require a new release. Edit `packages/shared/src/projects.ts`, drop a 1280×720 PNG into `apps/web/public/assets/projects/<id>.png`, then deploy the site — web, mobile **and** desktop all load the list and images live from `/api/projects`. Tags are only needed when app code changes.
 
 ## Project Scripts (asset generation)
 
