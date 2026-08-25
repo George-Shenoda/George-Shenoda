@@ -96,6 +96,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # google-services.json is intentionally untracked (rotated secret policy);
+      # it is injected from the GOOGLE_SERVICES_JSON_B64 Actions secret.
+      - name: Restore google-services.json
+        if: env.HAS_EXPO_TOKEN == 'true'
+        env:
+          GS_B64: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
+        run: |
+          if [ -z "$GS_B64" ]; then
+            echo "::error::Secret GOOGLE_SERVICES_JSON_B64 is not set. Add it under Settings > Secrets and variables > Actions (base64 of apps/mobile/google-services.json)."
+            exit 1
+          fi
+          echo "$GS_B64" | base64 -d > apps/mobile/google-services.json
+          node -e "JSON.parse(require('fs').readFileSync('apps/mobile/google-services.json','utf8'))" || { echo "::error::Decoded file is not valid JSON."; exit 1; }
+
       - name: Setup Expo
         if: env.HAS_EXPO_TOKEN == 'true'
         uses: expo/expo-github-action@v8

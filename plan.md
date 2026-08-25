@@ -1,28 +1,28 @@
-# Plan — Google Analytics (gtag.js)
+# Plan — Firebase Analytics (Android now, iOS prepped)
 
-## Branches: feat/google-analytics → chore/remove-hardcoded-ga-id → chore/rename-ga-env-var
+## Branch: feat/firebase-analytics (rebuilt — secret scrub)
 
-User request: install GA4 gtag.js (`G-JMPFJDFM5T`) on every page, remove any
-hardcoded ID from source, and silence Vercel's "public framework prefix" warning
-when saving the env var.
+> **Incident note:** the first push of this branch committed
+> `apps/mobile/google-services.json`; GitHub flagged the embedded API key.
+> Remediation (user-approved): key rotated in Google Cloud (old `AIzaSyBHdX…`
+> deleted, fresh config downloaded), branch history rebuilt without the file and
+> force-pushed, config now injected via `GOOGLE_SERVICES_JSON_B64` Actions secret.
+> File is gitignored locally.
 
-### Final approach
+## Changes
 
-1. `apps/web/components/Analytics.tsx` — `next/script` wrapper
-   - `strategy="afterInteractive"` (non render-blocking; LCP-safe)
-   - **ID read exclusively from `GOOGLE_ANALYTICS_ID`; no hardcoded fallback —
-     renders nothing when unset**
-   - No `NEXT_PUBLIC_` prefix: Analytics is a Server Component, so the value is
-     interpolated into HTML server-side and stays out of the client bundle
-     (this also clears Vercel's public-prefix warning on save)
-2. Local `apps/web/.env` (untracked): `GOOGLE_ANALYTICS_ID=G-JMPFJDFM5T`
-3. **User follow-up in Vercel:** env var name is now `GOOGLE_ANALYTICS_ID`
-   (see README); analytics stays off until set
-4. README documents the variable as server-side-only
+1. `apps/mobile/google-services.json` — **untracked** local file only (gitignored)
+2. Deps: `@react-native-firebase/app` + `@react-native-firebase/analytics` v26.3.2
+3. `apps/mobile/app.json`: android.googleServicesFile + `@react-native-firebase/app` plugin
+4. New `apps/mobile/src/analytics.ts`: fail-safe wrapper (v26 named-export API)
+5. Instrumentation: `app_open` on launch; deduped `screen_view` per section via existing activeSection state
+6. `.github/workflows/release.yml`: Android job decodes `GOOGLE_SERVICES_JSON_B64`
+   into place before `eas build`, fail-fast with clear error if unset
+7. README: untracked-config setup (local + CI), rotation playbook, DebugView, iOS prep
 
-### Verification
+## Verification
 
-- [ ] typecheck/lint/build green
-- [ ] Built homepage HTML contains `googletagmanager.com/gtag/js` (env present locally)
-- [ ] Commit message = branch name; push; PR → main
-
+- [x] mobile typecheck green
+- [x] prebuild config resolves plugin + googleServicesFile
+- [ ] Runtime DebugView check on device (user side)
+- [ ] Branch contains no google-services.json in history (rebuilt from main)

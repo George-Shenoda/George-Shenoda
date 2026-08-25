@@ -26,6 +26,7 @@ import CVSheet from './src/components/CVSheet';
 import PrivacySheet from './src/components/PrivacySheet';
 import { ScrollProvider, useScroll, type Section } from './src/scroll';
 import { ThemeModeProvider, usePalette, useThemeMode } from './src/theme-mode';
+import { initAnalytics, logScreen } from './src/analytics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { projects as bundledProjects, type Project } from '@portfolio/shared';
 import { SITE_URL } from './src/config';
@@ -42,9 +43,19 @@ type ProjectsCache = {
 function PortfolioApp() {
   const palette = usePalette();
   const { scheme } = useThemeMode();
-  const { onScroll, trackSection, getSectionTop, setContentHeight } = useScroll();
+  const { onScroll, trackSection, getSectionTop, setContentHeight, activeSection } =
+    useScroll();
 
   const scrollRef = useRef<ScrollView>(null);
+
+  // Firebase Analytics: app open + section-level screen views (best-effort).
+  useEffect(() => {
+    initAnalytics();
+  }, []);
+
+  useEffect(() => {
+    logScreen(activeSection);
+  }, [activeSection]);
 
   // Projects state shared with TrustSection for live badge count
   const [projects, setProjects] = useState<Project[]>(bundledProjects);
