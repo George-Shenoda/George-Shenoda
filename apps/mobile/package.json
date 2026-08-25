@@ -35,8 +35,9 @@
   },
   "scripts": {
     "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "typecheck": "tsc --noEmit"
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "typecheck": "tsc --noEmit",
+    "eas-build-pre-install": "node scripts/eas-write-firebase-configs.mjs"
   }
 }

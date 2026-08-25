@@ -96,19 +96,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # google-services.json is intentionally untracked (rotated secret policy);
-      # it is injected from the GOOGLE_SERVICES_JSON_B64 Actions secret.
-      - name: Restore google-services.json
-        if: env.HAS_EXPO_TOKEN == 'true'
-        env:
-          GS_B64: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
-        run: |
-          if [ -z "$GS_B64" ]; then
-            echo "::error::Secret GOOGLE_SERVICES_JSON_B64 is not set. Add it under Settings > Secrets and variables > Actions (base64 of apps/mobile/google-services.json)."
-            exit 1
-          fi
-          echo "$GS_B64" | base64 -d > apps/mobile/google-services.json
-          node -e "JSON.parse(require('fs').readFileSync('apps/mobile/google-services.json','utf8'))" || { echo "::error::Decoded file is not valid JSON."; exit 1; }
+      # NOTE: firebase configs are NOT injected here. `eas build` re-clones the
+      # repo on Expo's servers, so runner-local files never reach the build.
+      # Configs arrive via EAS environment variables consumed by
+      # apps/mobile/scripts/eas-write-firebase-configs.mjs (eas-build-pre-install):
+      #   GOOGLE_SERVICES_JSON_B64 / GOOGLE_SERVICES_PLIST_B64
+      # Set them with `eas env:create` or on the Expo dashboard.
 
       - name: Setup Expo
         if: env.HAS_EXPO_TOKEN == 'true'
@@ -158,18 +151,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # GoogleService-Info.plist is intentionally untracked; injected from the
-      # GOOGLE_SERVICES_PLIST_B64 Actions secret when iOS builds are enabled.
-      - name: Restore GoogleService-Info.plist
-        if: env.HAS_EXPO_TOKEN == 'true' && env.ENABLE_IOS == 'true'
-        env:
-          PLIST_B64: ${{ secrets.GOOGLE_SERVICES_PLIST_B64 }}
-        run: |
-          if [ -z "$PLIST_B64" ]; then
-            echo "::error::Secret GOOGLE_SERVICES_PLIST_B64 is not set. Add it under Settings > Secrets and variables > Actions (base64 of apps/mobile/GoogleService-Info.plist)."
-            exit 1
-          fi
-          echo "$PLIST_B64" | base64 -d > apps/mobile/GoogleService-Info.plist
+      # iOS config arrives via EAS env var GOOGLE_SERVICES_PLIST_B64
+      # (see the Android job note).
 
       - name: Setup Expo
         if: env.HAS_EXPO_TOKEN == 'true' && env.ENABLE_IOS == 'true'
