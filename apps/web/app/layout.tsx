@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
 import Navbar from "@/components/web/navbar";
+import Analytics from "@/components/Analytics";
 import TitleBar from "@/components/desktop/TitleBar";
 import ElectronThemeSync from "@/components/desktop/ElectronThemeSync";
 import { ThemeProvider } from "next-themes";
@@ -73,6 +74,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 >
                     <TitleBar />
                     <ElectronThemeSync />
+                    <Analytics />
                     <Navbar />
                     {children}
                 </ThemeProvider>
