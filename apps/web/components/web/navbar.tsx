@@ -31,10 +31,22 @@ function Navbar() {
             setProgress(max > 0 ? Math.min(1, scrollY / max) : 0);
 
             let current = "";
-            for (const { id } of NAV_LINKS) {
+            const isNearBottom = max > 0 && scrollY >= max - 100;
+
+            for (let i = NAV_LINKS.length - 1; i >= 0; i--) {
+                const { id } = NAV_LINKS[i];
                 const el = document.getElementById(id);
                 if (!el) continue;
-                if (el.getBoundingClientRect().top <= 160) current = id;
+
+                if (isNearBottom && id === "contact") {
+                    current = "contact";
+                    break;
+                }
+
+                if (el.getBoundingClientRect().top <= 160) {
+                    current = id;
+                    break;
+                }
             }
             setActiveSection(current);
         };
