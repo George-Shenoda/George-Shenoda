@@ -114,7 +114,7 @@ const cv: Cv = {
       name: "GStack Client Portal",
       description:
         "Client-facing portal for project tracking and communication, with role-based access and automated email notifications.",
-      techstack: ["Next.js", "Node.js", "Nodemailer"],
+      techstack: ["Next.js", "Node.js", "Nodemailer", "MongoDB"],
     },
     {
       id: "elevate-studio",
@@ -128,7 +128,7 @@ const cv: Cv = {
       name: "IoT Smart Office System",
       description:
         "Sensor network streaming environmental data over MQTT to a live monitoring dashboard.",
-      techstack: ["ESP32", "MQTT", "React", "Node.js"],
+      techstack: ["Raspberry Pi", "MQTT", "Python", "Blynk"],
     },
   ],
   skillGroups: [
@@ -142,7 +142,7 @@ const cv: Cv = {
     },
     {
       label: "Embedded & IoT",
-      items: ["C/C++", "ESP32", "MQTT", "KNX"],
+      items: ["C/C++", "ESP32", "MQTT", "KNX", "Raspberry Pi", "Python", "Blynk"],
     },
     {
       label: "Tools & Platforms",
@@ -170,6 +170,11 @@ const cv: Cv = {
       issuer: "Aviation – Ain Shams University",
       year: "2024",
     },
+    {
+      title: "IoT Intern",
+      issuer: "Samsung Innovation Campus",
+      year: "2025",
+    }
   ],
   languages: [
     { name: "Arabic", level: "Native" },
