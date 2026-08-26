@@ -21,23 +21,10 @@ const OVERLAY = {
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
-const SENSITIVE_ENV_VARS = [
-  'EMAIL_USER',
-  'EMAIL_PASS',
-  'EMAIL_TO',
-  'GMAIL_USER',
-  'GMAIL_PASS',
-  'GMAIL_APP_PASSWORD',
-  'CONTACT_TO_EMAIL',
-  'CONTACT_AUTO_REPLY',
-];
+const SENSITIVE_ENV_VARS = [];
 
-function filterEnv(env) {
-  const filtered = { ...env };
-  for (const key of SENSITIVE_ENV_VARS) {
-    delete filtered[key];
-  }
-  return filtered;
+function filterEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  return { ...env };
 }
 
 let win = null;
