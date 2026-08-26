@@ -40,7 +40,7 @@ const projects: Project[] = [
     title: "IoT Smart Office System",
     techstack: ["Raspberry Pi", "MQTT", "Python", "Blynk"],
     link: "https://gstack-client-portal.vercel.app",
-    image: "https://placehold.co/1000x600",
+    image: "https://placehold.co/1000x6   00",
   },
 ];
 

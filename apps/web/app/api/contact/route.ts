@@ -6,10 +6,20 @@ const MAX_NAME_LENGTH = 100;
 const MAX_EMAIL_LENGTH = 254;
 const MAX_MESSAGE_LENGTH = 5000;
 
+function isAllowedOrigin(origin: string | null): boolean {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+  if (!origin || origin === 'null') return true; // Electron (file:// or local server)
+  if (origin === siteUrl) return true;
+  // Allow any localhost / 127.0.0.1 port (Electron dev + prod)
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return true;
+  return false;
+}
+
 function corsHeaders(origin: string | null): Record<string, string> {
-  const allowedOrigin = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+  const allowedOrigin = isAllowedOrigin(origin) ? (origin ?? siteUrl) : siteUrl;
   return {
-    'Access-Control-Allow-Origin': origin === allowedOrigin ? origin : allowedOrigin,
+    'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   };
