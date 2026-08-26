@@ -32,7 +32,7 @@ const SENSITIVE_ENV_VARS = [
   'CONTACT_AUTO_REPLY',
 ];
 
-function filterEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+function filterEnv(env) {
   const filtered = { ...env };
   for (const key of SENSITIVE_ENV_VARS) {
     delete filtered[key];
