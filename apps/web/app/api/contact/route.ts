@@ -12,6 +12,8 @@ function isAllowedOrigin(origin: string | null): boolean {
   if (origin === siteUrl) return true;
   // Allow any localhost / 127.0.0.1 port (Electron dev + prod)
   if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return true;
+  // Mobile app origins (Capacitor, Expo web)
+  if (origin === 'capacitor://localhost' || origin === 'http://localhost') return true;
   return false;
 }
 
