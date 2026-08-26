@@ -8,10 +8,10 @@ afterEach(() => {
 });
 
 describe("SITE_URL", () => {
-  it("defaults to localhost:3000 without EXPO_PUBLIC_SITE_URL", async () => {
+  it("defaults to production URL without EXPO_PUBLIC_SITE_URL", async () => {
     vi.stubEnv("EXPO_PUBLIC_SITE_URL", "");
     const config = await importConfig();
-    expect(config.SITE_URL).toBe("http://localhost:3000");
+    expect(config.SITE_URL).toBe("https://george-shenoda.vercel.app");
   });
 
   it("strips a trailing slash from EXPO_PUBLIC_SITE_URL", async () => {
