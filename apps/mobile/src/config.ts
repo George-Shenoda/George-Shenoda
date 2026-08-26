@@ -1,5 +1,5 @@
 export const SITE_URL = (
-  process.env.EXPO_PUBLIC_SITE_URL?.trim() || 'http://localhost:3000'
+  process.env.EXPO_PUBLIC_SITE_URL?.trim() || 'https://george-shenoda.vercel.app'
 ).replace(/\/$/, '');
 
 export function resolveAssetUrl(url: string): string {
