@@ -23,7 +23,7 @@ const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
 const SENSITIVE_ENV_VARS = [];
 
-function filterEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+function filterEnv(env) {
   return { ...env };
 }
 
