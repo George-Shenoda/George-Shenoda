@@ -14,9 +14,10 @@ import { Menu } from "lucide-react";
 import Link from "next/link";
 
 const NAV_LINKS = [
-    { id: "workflow", label: "Workflow" },
-    { id: "projects", label: "Projects" },
-    { id: "contact", label: "Contact" },
+    { id: "workflow", label: "Workflow", href: "#workflow" },
+    { id: "projects", label: "Projects", href: "#projects" },
+    { id: "contact", label: "Contact", href: "#contact" },
+    { id: "download", label: "Download", href: "/download" },
 ] as const;
 
 function Navbar() {
@@ -92,10 +93,16 @@ function Navbar() {
                     George Shenoda
                 </button>
                 <nav className="hidden items-center gap-6 md:flex" aria-label="Primary">
-                    {NAV_LINKS.map(({ id, label }) => (
+                    {NAV_LINKS.map(({ id, label, href }) => (
                         <button
                             key={id}
-                            onClick={() => scrollToView(id, pathname)}
+                            onClick={() => {
+                                if (href.startsWith('/')) {
+                                    router.push(href);
+                                } else {
+                                    scrollToView(id, pathname);
+                                }
+                            }}
                             aria-current={activeSection === id ? "true" : undefined}
                             className={`relative cursor-pointer text-[15px] font-medium transition-all hover:text-primary ${
                                 activeSection === id ? "text-primary" : "text-foreground/80"
@@ -144,10 +151,16 @@ function Navbar() {
                             }
                         />
                         <DropdownMenuContent align="end" className="min-w-44">
-                            {NAV_LINKS.map(({ id, label }) => (
+                            {NAV_LINKS.map(({ id, label, href }) => (
                                 <DropdownMenuItem
                                     key={id}
-                                    onClick={() => scrollToView(id, pathname)}
+                                    onClick={() => {
+                                        if (href.startsWith('/')) {
+                                            router.push(href);
+                                        } else {
+                                            scrollToView(id, pathname);
+                                        }
+                                    }}
                                     className={`text-base ${activeSection === id ? "text-primary font-semibold" : ""}`}
                                 >
                                     {label}

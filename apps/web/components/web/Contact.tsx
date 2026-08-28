@@ -12,9 +12,10 @@ import {
 import { CheckCircle2, AlertCircle, Loader2, MailWarning } from 'lucide-react';
 import Reveal from './Reveal';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://localhost:3000';
+const _SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://localhost:3000'; // eslint-disable-line @typescript-eslint/no-unused-vars
+const PRODUCTION_URL = 'https://george-shenoda.vercel.app';
 const OUTBOX_KEY = 'portfolio-contact-outbox';
-const COOLDOWN_MS = 10_000;
+const COOLDOWN_MS = 5_000;
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -23,53 +24,22 @@ export default function Contact() {
     message: '',
     website: '',
   });
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error' | 'queued' | 'cooldown'>('idle');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error' | 'queued'>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [queuedCount, setQueuedCount] = useState(0);
   const [cooldownUntil, setCooldownUntil] = useState<number>(0);
-  const [cooldownRemaining, setCooldownRemaining] = useState(0);
   const outboxRef = useRef<Outbox | null>(null);
-  const cooldownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pendingSubmitRef = useRef<{ formData: typeof formData; resolve: (value: void) => void } | null>(null);
 
   const isDesktop =
     typeof window !== 'undefined' && window.electronAPI?.isDesktop === true;
-
-  // Cooldown countdown interval
-  useEffect(() => {
-    if (status === 'cooldown' && cooldownUntil > 0) {
-      const now = Date.now();
-      const remaining = Math.ceil((cooldownUntil - now) / 1000);
-      if (remaining > 0) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setCooldownRemaining(remaining);
-        cooldownIntervalRef.current = setInterval(() => {
-          const now2 = Date.now();
-          const rem = Math.ceil((cooldownUntil - now2) / 1000);
-          if (rem > 0) {
-            setCooldownRemaining(rem);
-          } else {
-            setCooldownRemaining(0);
-            setStatus('idle');
-            setCooldownUntil(0);
-            if (cooldownIntervalRef.current) clearInterval(cooldownIntervalRef.current);
-          }
-        }, 1000);
-      } else {
-        setStatus('idle');
-        setCooldownUntil(0);
-      }
-    }
-    return () => {
-      if (cooldownIntervalRef.current) clearInterval(cooldownIntervalRef.current);
-    };
-  }, [status, cooldownUntil]);
 
   // Desktop only: keep an offline outbox and flush it on reconnect/launch.
   useEffect(() => {
     if (!isDesktop) return;
     const outbox = createOutbox({
       storage: createLocalStorageStorage(OUTBOX_KEY),
-      submit: (payload) => submitContact(SITE_URL, payload),
+      submit: (payload) => submitContact(PRODUCTION_URL, payload),
     });
     outboxRef.current = outbox;
 
@@ -98,18 +68,13 @@ export default function Contact() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (status === 'cooldown') return;
-    setStatus('loading');
-    setErrorMessage('');
-
+  const executeSubmit = async (submitFormData: typeof formData) => {
     try {
       const result =
         window.electronAPI?.isDesktop === true
-          ? // Desktop app: no server runtime here — route through the deployed site.
-            await submitContact(SITE_URL, formData)
-          : await sendContactEmail(formData);
+          ? // Desktop app: use production URL to hit Vercel API with email config
+            await submitContact(PRODUCTION_URL, submitFormData)
+          : await sendContactEmail(submitFormData);
 
       if (result.success) {
         setStatus('success');
@@ -118,7 +83,7 @@ export default function Contact() {
         setFormData({ name: '', email: '', message: '', website: '' });
       } else if (result.networkError && outboxRef.current) {
         // Offline: queue locally and auto-send when connectivity returns.
-        await outboxRef.current.add(formData);
+        await outboxRef.current.add(submitFormData);
         setQueuedCount(await outboxRef.current.pendingCount());
         setStatus('queued');
         setFormData({ name: '', email: '', message: '', website: '' });
@@ -133,7 +98,37 @@ export default function Contact() {
     }
   };
 
-    const isFormDisabled = status === 'loading' || status === 'cooldown';
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const now = Date.now();
+    const remainingMs = cooldownUntil - now;
+
+    if (remainingMs > 0) {
+      // In cooldown: set loading, wait remaining time, then submit
+      setStatus('loading');
+      setErrorMessage('');
+
+      await new Promise<void>((resolve) => {
+        pendingSubmitRef.current = { formData, resolve };
+        setTimeout(() => {
+          pendingSubmitRef.current = null;
+          resolve();
+        }, remainingMs);
+      });
+
+      // After waiting, execute the submit
+      await executeSubmit(formData);
+      return;
+    }
+
+    // Not in cooldown: normal submit
+    setStatus('loading');
+    setErrorMessage('');
+    await executeSubmit(formData);
+  };
+
+  const isFormDisabled = status === 'loading';
 
     return (
         <div id="contact" className="w-full flex items-center justify-center p-6 sm:p-10 dark:bg-[#151d1d] bg-[#eee]">
@@ -179,12 +174,6 @@ export default function Contact() {
                     ? 'You are offline — your message was saved and will send automatically once you reconnect.'
                     : `${queuedCount} saved message${queuedCount === 1 ? '' : 's'} will send automatically once you are back online.`}
                 </span>
-              </div>
-            )}
-            {status === 'cooldown' && (
-              <div className="flex items-center gap-3 p-4 mb-2 rounded-xl bg-primary/10 border border-primary/25 text-primary text-sm font-medium animate-in fade-in duration-200">
-                <Loader2 className="size-5 animate-spin shrink-0" />
-                <span>Please wait {cooldownRemaining}s before sending another message.</span>
               </div>
             )}
             </div>
@@ -270,11 +259,6 @@ export default function Contact() {
                   <>
                     <Loader2 className="size-5 animate-spin mr-2" />
                     Sending Message...
-                  </>
-                ) : status === 'cooldown' ? (
-                  <>
-                    <Loader2 className="size-5 animate-spin mr-2" />
-                    Wait {cooldownRemaining}s...
                   </>
                 ) : (
                   <>
