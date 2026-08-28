@@ -121,13 +121,15 @@ jobs:
           ARTIFACT_URL=$(node -e "const b=JSON.parse(require('fs').readFileSync('build.json','utf8'));console.log(b[0].artifacts.buildUrl)")
           echo "Downloading from $ARTIFACT_URL"
           curl -fL "$ARTIFACT_URL" -o app-release.apk
+          VERSION=$(node -e "console.log(require('./package.json').version)")
+          mv app-release.apk "George-Shenoda-Portfolio-v${VERSION}.apk"
 
       - name: Upload Android artifact
         if: env.HAS_EXPO_TOKEN == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: apps/mobile/app-release.apk
+          path: apps/mobile/George-Shenoda-Portfolio-v*.apk
           if-no-files-found: error
           retention-days: 30
 

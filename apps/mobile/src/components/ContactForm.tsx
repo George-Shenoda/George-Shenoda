@@ -30,11 +30,11 @@ import { createAsyncStorageStorage } from '../outbox-storage';
 import { usePalette } from '../theme-mode';
 
 const OUTBOX_KEY = 'portfolio-contact-outbox';
-const COOLDOWN_MS = 10_000;
+const COOLDOWN_MS = 5_000;
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-type Status = 'idle' | 'loading' | 'success' | 'error' | 'queued' | 'cooldown';
+type Status = 'idle' | 'loading' | 'success' | 'error' | 'queued';
 
 function ContactForm() {
   const palette = usePalette();
@@ -49,7 +49,7 @@ function ContactForm() {
   const [cooldownUntil, setCooldownUntil] = useState(0);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const outboxRef = useRef<Outbox | null>(null);
-  const cooldownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingSubmitRef = useRef<{ formData: { name: string; email: string; message: string; website: string }; resolve: (value: void) => void } | null>(null);
 
   const outbox = useMemo(
     () =>
@@ -60,21 +60,6 @@ function ContactForm() {
     []
   );
   outboxRef.current = outbox;
-
-  // Cooldown timer
-  useEffect(() => {
-    if (status === 'success' && cooldownUntil > Date.now()) {
-      setStatus('cooldown');
-      const remaining = cooldownUntil - Date.now();
-      cooldownTimerRef.current = setTimeout(() => {
-        setStatus('idle');
-        setCooldownUntil(0);
-      }, remaining);
-    }
-    return () => {
-      if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current);
-    };
-  }, [status, cooldownUntil]);
 
   // Auto-flush triggers: launch, reconnect (NetInfo), and app foreground
   // (AppState→active). Connectivity is checked before flushing so offline
@@ -114,6 +99,39 @@ function ContactForm() {
     };
   }, [outbox]);
 
+  const executeSubmit = async (submitData: { name: string; email: string; message: string; website: string }) => {
+    try {
+      const result = await submitContact(SITE_URL, submitData);
+
+      if (result.success) {
+        setStatus('success');
+        const until = Date.now() + COOLDOWN_MS;
+        setCooldownUntil(until);
+        setName('');
+        setEmail('');
+        setMessage('');
+        setWebsite('');
+      } else if (result.networkError && outboxRef.current) {
+        // Offline: persist to the outbox; it auto-sends once connectivity returns.
+        await outboxRef.current.add(submitData);
+        setQueuedCount(await outboxRef.current.pendingCount());
+        setStatus('queued');
+        setName('');
+        setEmail('');
+        setMessage('');
+        setWebsite('');
+      } else {
+        setStatus('error');
+        setErrorMessage(result.error ?? 'Something went wrong. Please try again.');
+      }
+    } catch {
+      setStatus('error');
+      setErrorMessage(
+        'Failed to send message. Please check your connection and try again.'
+      );
+    }
+  };
+
   function clearBanners() {
     if (status === 'error' || status === 'queued') {
       setStatus('idle');
@@ -122,8 +140,28 @@ function ContactForm() {
   }
 
   async function handleSubmit() {
-    if (status === 'cooldown') return;
+    const now = Date.now();
+    const remainingMs = cooldownUntil - now;
 
+    if (remainingMs > 0) {
+      // In cooldown: set loading, wait remaining time, then submit
+      setStatus('loading');
+      setErrorMessage('');
+
+      await new Promise((resolve) => {
+        pendingSubmitRef.current = { formData: { name, email, message, website }, resolve };
+        setTimeout(() => {
+          pendingSubmitRef.current = null;
+          resolve();
+        }, remainingMs);
+      });
+
+      // After waiting, execute the submit
+      await executeSubmit({ name, email, message, website });
+      return;
+    }
+
+    // Not in cooldown: normal submit
     if (!name.trim() || !email.trim() || !message.trim()) {
       setStatus('error');
       setErrorMessage('Please fill in your name, email, and message.');
@@ -145,37 +183,7 @@ function ContactForm() {
 
     setStatus('loading');
     setErrorMessage('');
-
-    try {
-      const result = await submitContact(SITE_URL, { name, email, message, website });
-
-      if (result.success) {
-        setStatus('success');
-        const until = Date.now() + COOLDOWN_MS;
-        setCooldownUntil(until);
-        setName('');
-        setEmail('');
-        setMessage('');
-        setWebsite('');
-      } else if (result.networkError && outboxRef.current) {
-        // Offline: persist to the outbox; it auto-sends once connectivity returns.
-        await outboxRef.current.add({ name, email, message, website });
-        setQueuedCount(await outboxRef.current.pendingCount());
-        setStatus('queued');
-        setName('');
-        setEmail('');
-        setMessage('');
-        setWebsite('');
-      } else {
-        setStatus('error');
-        setErrorMessage(result.error ?? 'Something went wrong. Please try again.');
-      }
-    } catch {
-      setStatus('error');
-      setErrorMessage(
-        'Failed to send message. Please check your connection and try again.'
-      );
-    }
+    await executeSubmit({ name, email, message, website });
   }
 
   const inputStyle: TextStyle = {
@@ -213,7 +221,7 @@ function ContactForm() {
     transform: [{ rotate: `${spinnerRotation.get()}deg` }],
   }));
 
-  const isFormDisabled = status === 'loading' || status === 'cooldown';
+  const isFormDisabled = status === 'loading';
 
   return (
     <View
@@ -373,33 +381,6 @@ function ContactForm() {
                   </Text>
                 </View>
               )}
-              {status === 'cooldown' && (
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: 16,
-                    marginBottom: 8,
-                    borderRadius: 14,
-                    backgroundColor: `${palette.primary}1A`,
-                    borderWidth: 1,
-                    borderColor: `${palette.primary}40`,
-                  }}
-                >
-                  <Loader2 size={20} color={palette.primary} />
-                  <Text
-                    style={{
-                      color: palette.primary,
-                      fontSize: 14,
-                      fontWeight: '500',
-                      flex: 1,
-                    }}
-                  >
-                    Please wait {Math.ceil((cooldownUntil - Date.now()) / 1000)}s before sending another message.
-                  </Text>
-                </View>
-              )}
 
               <View style={{ gap: 6 }}>
                 <Text style={labelStyle}>Name</Text>
@@ -488,7 +469,7 @@ function ContactForm() {
                     width: '100%',
                     borderRadius: 26,
                     overflow: 'hidden',
-                    opacity: status === 'loading' || status === 'cooldown' ? 0.7 : 1,
+                    opacity: status === 'loading' ? 0.7 : 1,
                     shadowColor: palette.primary,
                     shadowOpacity: 0.3,
                     shadowRadius: 16,
@@ -522,16 +503,6 @@ function ContactForm() {
                             Sending Message...
                           </Text>
                         </>
-                      ) : status === 'cooldown' ? (
-                        <Text
-                          style={{
-                            color: '#ffffff',
-                            fontSize: 16,
-                            fontWeight: '600',
-                          }}
-                        >
-                          Wait {Math.ceil((cooldownUntil - Date.now()) / 1000)}s...
-                        </Text>
                       ) : (
                         <Text
                           style={{

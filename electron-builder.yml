@@ -12,7 +12,6 @@ win:
   icon: assets/icons/icon.ico
   target:
     - nsis
-    - portable
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
@@ -23,14 +22,9 @@ mac:
       arch:
         - x64
         - arm64
-    - target: zip
-      arch:
-        - x64
-        - arm64
 linux:
   icon: assets/icons/icon.png
   target:
-    - AppImage
     - deb
   category: Development
 npmRebuild: false
