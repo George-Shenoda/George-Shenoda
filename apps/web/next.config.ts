@@ -8,6 +8,18 @@ const nextConfig: NextConfig = {
     unoptimized: true,
     domains: ["placehold.co"],
   },
+  async headers() {
+    return [
+      {
+        source: "/api/projects",
+        headers: [
+          { key: "Cache-Control", value: "no-store, must-revalidate" },
+          { key: "CDN-Cache-Control", value: "no-store" },
+          { key: "Vary", value: "Origin" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

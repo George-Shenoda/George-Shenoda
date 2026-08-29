@@ -1,43 +1,35 @@
-# Plan: Fix Email Service & Make Download Page Web-Only
+# Plan: Desktop OTA Project Images (fix/desktop-projects-image-ota)
 
-## Issue 1: Email Service Not Configured in Desktop App ✅ COMPLETED
+## Scope: Desktop only (as requested). Mobile unchanged.
 
-**Root Cause**: When running the desktop app (`npm run desktop:dev`), the Electron main process starts the Next.js dev server with `cwd: WEB_DIR`, but the environment variables from `apps/web/.env` were not being loaded by Next.js because the process was spawned from the desktop directory context.
+### Issue 1 — Desktop: new/updated project images not visible after `git push` without rebuilding Electron
 
-**Solution**: 
-- Added `dotenv` package to desktop app dependencies
-- Modified `apps/desktop/electron/main.mjs` to load `apps/web/.env` before starting the Next.js server
-- The loaded env vars are now passed to the spawned Next.js process
+**Verified root cause:**
+- `apps/desktop/electron/assemble.mjs:24-25` copies `apps/web/.next/static` + `apps/web/public` into the standalone bundle ONCE at `desktop:build`. `apps/desktop/electron/main.mjs:102-130` serves that frozen copy. Any file added to `apps/web/public/assets/projects/` after that build is not in installed binaries — Vercel deploy alone does not update desktop.
+- `apps/web/components/web/projects.tsx:39-45,80` does OTA-fetch the JSON list via `${LIVE_BASE}/api/projects` (`packages/shared/src/projects.ts` -> `apps/web/app/api/projects/route.ts:1-9`), so NEW project entries appear, but images stay local:
+- `apps/web/components/web/Project.tsx:18-24` strips `LIVE_BASE` prefix (`optimizedSrc = image.slice(LIVE_BASE.length)`) and forces `next/image` from `http://127.0.0.1:<port>/assets/...` (frozen local copy). Cross-origin `<img>` branch `42-50` is never taken for `LIVE_BASE` images.
 
-**Files Modified**:
-1. `apps/desktop/package.json` - Added dotenv dependency
-2. `apps/desktop/electron/main.mjs` - Load .env from web directory using dotenv.config()
+**Chosen solution — Desktop A (OTA cross-origin, offline fallback):**
+- When running inside Electron (`window.electronAPI?.isDesktop === true`) and `NEXT_PUBLIC_SITE_URL` is set, keep remote `src` as `https://site.vercel.app/assets/projects/*.png` and render as plain `<img>` (cross-origin), not `next/image`. No stripping.
+- Otherwise (web, or desktop without `LIVE_BASE`, or offline with fetch failure) fall back to local `/assets/...` via `next/image`.
+- Add `onError` fallback: if remote image 404/offline, swap to local bundled path so offline desktop still shows snapshot.
+- Add `cache: 'no-store'` to client fetch (`projects.tsx:19-27`) and `Cache-Control: no-store, must-revalidate` to `apps/web/app/api/projects/route.ts:6` + `next.config.ts` headers so JSON list is never CDN-cached.
+- `next/image` stays `unoptimized: true` — no change needed for images domain; cross-origin `<img>` bypasses Next optimizer.
 
-**Verification**: Desktop dev server now shows "Environments: .env" in the startup logs, confirming the .env file is loaded.
+**Files to modify:**
+1. `apps/web/components/web/Project.tsx` — detect `isDesktop` (`useState` + `useEffect` guard for SSR), adjust `isOwnAsset`/`optimizedSrc` logic, add `imgLoadFailed` state and `onError` to swap to local fallback. Keep existing web behavior when `!isDesktop`.
+2. `apps/web/components/web/projects.tsx` — `fetchProjectsJson` with `fetch(url,{cache:'no-store'})`, pass `{cache:'no-store'}` for both live and fallback fetches.
+3. `apps/web/app/api/projects/route.ts` — add `Cache-Control: no-store, must-revalidate`, `CDN-Cache-Control: no-store`, `Vary: Origin`.
+4. `apps/web/next.config.ts` — add `async headers()` for `/api/projects` to enforce no-store (defense in depth, Vercel respects `next.config` headers).
 
----
+**Non-goals (desktop-only):**
+- Mobile not touched (`apps/mobile/src/components/ProjectsSection.tsx`, `apps/mobile/src/config.ts`, `apps/mobile/App.tsx` unchanged).
+- No `electron-updater`, no asset hash renaming, no `expo-image` migration.
 
-## Issue 2: Download Page Should Be Web-Only (Remove from Desktop) ✅ COMPLETED
+**Verification:**
+- `npm run typecheck -w @portfolio/web` + `npm run lint -w @portfolio/web` + `npm run build -w @portfolio/web` pass.
+- Dev: `NEXT_PUBLIC_SITE_URL=https://george-shenoda.vercel.app npm run desktop:dev` — add new entry + new PNG to `packages/shared/src/projects.ts` + `public/assets/projects/`, push to Vercel, confirm installed/dev desktop shows new image without `desktop:build` (live URL loads). Overwrite existing PNG same name, confirm desktop shows new bytes (remote URL reflects new Vercel deploy).
+- Offline: disconnect network, relaunch desktop — `/api/projects` fallback renders `bundledProjects`, remote image `onError` swaps to local bundled PNG (no blank).
+- Headers: `curl -I https://.../api/projects` shows `no-store`.
 
-**Root Cause**: The download page (`/download`) was accessible via the navbar in both web and desktop apps. The navbar already detects desktop mode via `window.electronAPI?.isDesktop`.
-
-**Solution**:
-- Modified the navbar component (`apps/web/components/web/navbar.tsx`) to conditionally exclude the "Download" link from `NAV_LINKS` when running in desktop mode
-- Used `useMemo` to create filtered nav links based on `isDesktop` state
-- Updated both the desktop nav and mobile dropdown menu
-- The download page itself remains accessible at `/download` on the web (for direct URL access), but is not linked from the desktop app's navbar
-
-**Files Modified**:
-1. `apps/web/components/web/navbar.tsx` - Conditionally hide Download link in desktop mode
-
-**Verification**: Lint and typecheck pass. Build completes successfully.
-
----
-
-## Summary
-
-Both issues have been resolved:
-
-1. **Email service** - The desktop app now correctly loads the `.env` file from the web directory, so EMAIL_USER and EMAIL_PASS are available to the Next.js server when running in the Electron desktop app.
-
-2. **Download page** - The download page is now web-only. It's not accessible via the navbar in the desktop app, but remains available at `/download` on the web for direct access.
+**Branch:** `fix/desktop-projects-image-ota` — commit message = branch name, push, PR to `main` after review.

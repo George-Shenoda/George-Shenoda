@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 
@@ -12,12 +15,29 @@ interface ProjectProps {
 }
 
 function Project({ title, techstack, link, image }: ProjectProps) {
-    // Assets served by this deployment go through next/image optimization
-    // (AVIF/WebP, right-sized). Cross-origin URLs (desktop live-fetch of newer
-    // content than its bundle) fall back to a plain lazy <img>.
-    const isOwnAsset =
-        !image.startsWith("http") ||
-        (LIVE_BASE !== "" && image.startsWith(`${LIVE_BASE}/`));
+    const [isDesktop, setIsDesktop] = useState(false);
+    const [remoteFailed, setRemoteFailed] = useState(false);
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time desktop detection from preload bridge
+        setIsDesktop(Boolean((window as unknown as { electronAPI?: { isDesktop?: boolean } }).electronAPI?.isDesktop));
+    }, []);
+
+    // Reset fallback when image URL changes (e.g. hash-renamed asset or new project)
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- reset transient error state for new src
+        setRemoteFailed(false);
+    }, [image]);
+
+    const isLiveRemote = LIVE_BASE !== "" && image.startsWith(`${LIVE_BASE}/`);
+    // Desktop OTA: keep remote LIVE_BASE URL as cross-origin so installed app
+    // loads the current deployed asset without requiring a rebuild. Falls back
+    // to bundled local copy if remote fails (offline / 404).
+    const shouldUseRemote = isLiveRemote && isDesktop && !remoteFailed;
+
+    const isOwnAsset = shouldUseRemote
+        ? false
+        : !image.startsWith("http") || isLiveRemote;
     const optimizedSrc =
         isOwnAsset && LIVE_BASE !== "" && image.startsWith(LIVE_BASE)
             ? image.slice(LIVE_BASE.length)
@@ -31,7 +51,17 @@ function Project({ title, techstack, link, image }: ProjectProps) {
             className="group bg-white dark:bg-[#192020] rounded-xl shadow-md border border-black/10 dark:border-white/10 overflow-hidden flex flex-col hover:scale-[1.02] hover:border-primary/40 hover:shadow-xl transition-[transform,border-color,box-shadow] duration-300 dark:hover:shadow-primary/20"
         >
             <div className="relative w-full aspect-video overflow-hidden">
-                {isOwnAsset ? (
+                {shouldUseRemote ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- desktop OTA remote asset; falls back to local onError
+                    <img
+                        src={image}
+                        alt={`${title} screenshot`}
+                        loading="lazy"
+                        decoding="async"
+                        onError={() => setRemoteFailed(true)}
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                ) : isOwnAsset ? (
                     <Image
                         src={optimizedSrc}
                         alt={`${title} screenshot`}
