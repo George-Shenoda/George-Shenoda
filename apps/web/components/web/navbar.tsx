@@ -118,7 +118,7 @@ function Navbar() {
                 </nav>
                 <div className="flex items-center gap-2">
                     <ThemeSwitcher />
-                    {isDesktop && (
+                    {!isDesktop && (
                         <Button
                             render={<Link href="/download" />}
                             variant="ghost"
