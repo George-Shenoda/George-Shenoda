@@ -9,10 +9,17 @@ export type Project = {
 const projects: Project[] = [
   {
     id: "gvmt-marketplace",
-    title: "GVMT Marketplace + Admin",
+    title: "GVMT Marketplace",
     techstack: ["Next.js", "TypeScript", "MongoDB", "Tailwind CSS"],
     link: "https://gvmt-two.vercel.app",
     image: "/assets/projects/gvmt-marketplace.png",
+  },
+  {
+    id: "gvmt-admin",
+    title: "GVMT Admin",
+    techstack: ["Next.js", "TypeScript", "MongoDB", "Tailwind CSS"],
+    link: "https://gvmt-admin.vercel.app",
+    image: "/assets/projects/gvmt-admin.png",
   },
   {
     id: "gstack-landing-page",
@@ -34,13 +41,6 @@ const projects: Project[] = [
     techstack: ["Next.js", "Node.js", "Nodemailer", "MongoDB"],
     link: "https://gstack-client-portal.vercel.app",
     image: "/assets/projects/gstack-portal.png",
-  },
-  {
-    id: "iot-smart-office",
-    title: "IoT Smart Office System",
-    techstack: ["Raspberry Pi", "MQTT", "Python", "Blynk"],
-    link: "https://gstack-client-portal.vercel.app",
-    image: "/assets/projects/iot-smart-office.png",
   },
 ];
 
