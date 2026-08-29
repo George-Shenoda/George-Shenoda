@@ -16,9 +16,9 @@
 - Add `cache: 'no-store'` to client fetch (`projects.tsx:19-27`) and `Cache-Control: no-store, must-revalidate` to `apps/web/app/api/projects/route.ts:6` + `next.config.ts` headers so JSON list is never CDN-cached.
 - `next/image` stays `unoptimized: true` — no change needed for images domain; cross-origin `<img>` bypasses Next optimizer.
 
-**Files to modify:**
-1. `apps/web/components/web/Project.tsx` — detect `isDesktop` (`useState` + `useEffect` guard for SSR), adjust `isOwnAsset`/`optimizedSrc` logic, add `imgLoadFailed` state and `onError` to swap to local fallback. Keep existing web behavior when `!isDesktop`.
-2. `apps/web/components/web/projects.tsx` — `fetchProjectsJson` with `fetch(url,{cache:'no-store'})`, pass `{cache:'no-store'}` for both live and fallback fetches.
+**Files to modify (v1 + v2 hotfix):**
+1. `apps/web/components/web/Project.tsx` — detect `isDesktop` synchronously via `useState(()=> window.electronAPI?.isDesktop)` (fixes blank first-render for new OTA images not in bundled snapshot), `LIVE_BASE` fallback to `https://george-shenoda.vercel.app` when `NEXT_PUBLIC_SITE_URL` not baked (fixes `LIVE_BASE=""` on `ELECTRON_BUILD` without local `.env`), `shouldUseRemote` + `onError` fallback to local.
+2. `apps/web/components/web/projects.tsx` — same `LIVE_BASE` fallback, `fetchProjectsJson` with `fetch(url,{cache:'no-store'})`.
 3. `apps/web/app/api/projects/route.ts` — add `Cache-Control: no-store, must-revalidate`, `CDN-Cache-Control: no-store`, `Vary: Origin`.
 4. `apps/web/next.config.ts` — add `async headers()` for `/api/projects` to enforce no-store (defense in depth, Vercel respects `next.config` headers).
 
@@ -32,4 +32,8 @@
 - Offline: disconnect network, relaunch desktop — `/api/projects` fallback renders `bundledProjects`, remote image `onError` swaps to local bundled PNG (no blank).
 - Headers: `curl -I https://.../api/projects` shows `no-store`.
 
-**Branch:** `fix/desktop-projects-image-ota` — commit message = branch name, push, PR to `main` after review.
+**Branches:**
+- `fix/desktop-projects-image-ota` (merged) — initial OTA + headers.
+- `fix/desktop-projects-image-ota-v2` — hotfix fallback URL + sync desktop detect (fixes "images isn't rendering at all").
+
+**Why v2:** Without `apps/web/.env`, `LIVE_BASE` baked as `""` → desktop never took remote branch and tried local `v1.png` missing in old bundle → blank. Async `isDesktop` also caused 1-tick local 404 flash.
