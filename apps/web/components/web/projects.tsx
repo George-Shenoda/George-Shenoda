@@ -10,11 +10,12 @@ const INITIAL_COUNT = 6;
 const LOAD_STEP = 6;
 
 /**
- * Site origin baked in at build time (empty string in env-less dev).
- * Desktop builds use it to load live data from the deployed site instead of
- * the bundled snapshot; "" degrades to same-origin relative URLs.
+ * Site origin baked at build time. Falls back to production so a desktop build
+ * without a local .env still reaches the live site (fixes blank after push).
  */
-const LIVE_BASE = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
+const LIVE_BASE = (
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://george-shenoda.vercel.app"
+).replace(/\/$/, "");
 
 async function fetchProjectsJson(url: string): Promise<Project[] | null> {
     try {
