@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import {
@@ -13,7 +13,7 @@ import { ThemeSwitcher } from "./themeSwitcher";
 import { Menu } from "lucide-react";
 import Link from "next/link";
 
-const NAV_LINKS = [
+const ALL_NAV_LINKS = [
     { id: "workflow", label: "Workflow", href: "#workflow" },
     { id: "projects", label: "Projects", href: "#projects" },
     { id: "contact", label: "Contact", href: "#contact" },
@@ -39,6 +39,12 @@ function Navbar() {
         }
         setIsDesktop(desktop);
     }, []);
+
+    // Filter out download link in desktop mode
+    const NAV_LINKS = useMemo(
+        () => ALL_NAV_LINKS.filter((link) => !(isDesktop && link.id === "download")),
+        [isDesktop]
+    );
 
     useEffect(() => {
         const update = () => {
@@ -74,7 +80,7 @@ function Navbar() {
             window.removeEventListener("scroll", update);
             window.removeEventListener("resize", update);
         };
-    }, []);
+    }, [NAV_LINKS]);
 
     const topOffset = isDesktop ? titlebarHeight : 0;
 
