@@ -38,4 +38,4 @@
 
 **Why v2:** Without `apps/web/.env`, `LIVE_BASE` baked as `""` → desktop never took remote branch and tried local `v1.png` missing in old bundle → blank. Async `isDesktop` also caused 1-tick local 404 flash.
 
-**OTA Test (feat/dummy-project-ota-test):** Adds `dummy-ota-project` (`packages/shared/src/projects.ts:45`, `apps/web/public/assets/projects/dummy-ota-project.png` 1280x720) to verify installed desktop (built before this) loads new project + image without rebuild via `https://george-shenoda.vercel.app/assets/projects/dummy-ota-project.png`.
+**OTA Test (feat/dummy-project-ota-test):** Added `dummy-ota-project` for verification (removed before release — dummy file deleted from `public/assets` and `packages/shared` on `main`).
