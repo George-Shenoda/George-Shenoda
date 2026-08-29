@@ -12,7 +12,7 @@ const projects: Project[] = [
     title: "GVMT Marketplace",
     techstack: ["Next.js", "TypeScript", "MongoDB", "Tailwind CSS"],
     link: "https://gvmt-two.vercel.app",
-    image: "/assets/projects/gvmt-marketplace.png",
+    image: "/assets/projects/gvmt-marketplace-v1.png",
   },
   {
     id: "gvmt-admin",
@@ -33,7 +33,7 @@ const projects: Project[] = [
     title: "Elevate Studio Website",
     techstack: ["Next.js", "Tailwind CSS"],
     link: "https://gstack-business-website.vercel.app",
-    image: "/assets/projects/elevate-studio.png",
+    image: "/assets/projects/elevate-studio-v1.png",
   },
   {
     id: "gstack-portal",
