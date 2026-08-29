@@ -14,10 +14,10 @@
 
 | Platform | Download |
 |----------|----------|
-| **Windows** | [`.exe Installer`](https://github.com/George-Shenoda/George-Shenoda/releases/download/v0.1.2/George.Shenoda.Setup.0.1.2.exe) |
-| **macOS** | [`.dmg arm`](https://github.com/George-Shenoda/George-Shenoda/releases/download/v0.1.2/George.Shenoda-0.1.2-arm64.dmg) • [`.dmg`](https://github.com/George-Shenoda/George-Shenoda/releases/download/v0.1.2/George.Shenoda-0.1.2.dmg) |
-| **Linux** | [`.deb`](https://github.com/George-Shenoda/George-Shenoda/releases/download/v0.1.2/George.Shenoda.Setup.0.1.2.deb) |
-| **Android** | [`.apk`](https://github.com/George-Shenoda/George-Shenoda/releases/download/v0.1.2/George.Shenoda.Setup.0.1.2.exe) |
+| **Windows** | [`.exe Installer`](https://github.com/George-Shenoda/George-Shenoda/releases/download/v0.1.4/George.Shenoda.Setup.0.1.4.exe) |
+| **macOS** | [`.dmg arm`](https://github.com/George-Shenoda/George-Shenoda/releases/download/v0.1.4/George.Shenoda-0.1.4-arm64.dmg) • [`.dmg`](https://github.com/George-Shenoda/George-Shenoda/releases/download/v0.1.4/George.Shenoda-0.1.4.dmg) |
+| **Linux** | [`.deb`](https://github.com/George-Shenoda/George-Shenoda/releases/download/v0.1.4/George.Shenoda.Setup.0.1.4.deb) |
+| **Android** | [`.apk`](https://github.com/George-Shenoda/George-Shenoda/releases/download/v0.1.4/George.Shenoda.Setup.0.1.4.exe) |
 
 > All desktop/mobile apps are built from the same codebase and sync with the live portfolio data.
 
