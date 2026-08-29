@@ -18,7 +18,7 @@ const LIVE_BASE = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
 
 async function fetchProjectsJson(url: string): Promise<Project[] | null> {
     try {
-        const res = await fetch(url);
+        const res = await fetch(url, { cache: "no-store" });
         if (!res.ok) return null;
         return await res.json();
     } catch {
