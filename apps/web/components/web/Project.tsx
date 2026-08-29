@@ -4,8 +4,11 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 
-// Same origin baked at build time (see projects.tsx); "" when unset.
-const LIVE_BASE = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
+// Baked at build time. Falls back to production URL so desktop builds without
+// a local .env still OTA-load live assets (fixes blank after `git push` without rebuild).
+const LIVE_BASE = (
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://george-shenoda.vercel.app"
+).replace(/\/$/, "");
 
 interface ProjectProps {
     title: string;
@@ -15,13 +18,17 @@ interface ProjectProps {
 }
 
 function Project({ title, techstack, link, image }: ProjectProps) {
-    const [isDesktop, setIsDesktop] = useState(false);
+    // Synchronous desktop detection avoids first-render flash of local 404 for
+    // new OTA images that aren't in the bundled snapshot (installed desktop).
+    const [isDesktop] = useState(
+        () =>
+            typeof window !== "undefined" &&
+            Boolean(
+                (window as unknown as { electronAPI?: { isDesktop?: boolean } })
+                    .electronAPI?.isDesktop
+            )
+    );
     const [remoteFailed, setRemoteFailed] = useState(false);
-
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time desktop detection from preload bridge
-        setIsDesktop(Boolean((window as unknown as { electronAPI?: { isDesktop?: boolean } }).electronAPI?.isDesktop));
-    }, []);
 
     // Reset fallback when image URL changes (e.g. hash-renamed asset or new project)
     useEffect(() => {
