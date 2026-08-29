@@ -42,20 +42,6 @@ const projects: Project[] = [
     link: "https://gstack-client-portal.vercel.app",
     image: "/assets/projects/gstack-portal.png",
   },
-  {
-    id: "dummy-ota-project",
-    title: "Dummy OTA Project",
-    techstack: ["Next.js", "OTA", "Test"],
-    link: "https://example.com/dummy-ota",
-    image: "/assets/projects/dummy-ota-project.png",
-  },
-  {
-    id: "dummy-ota-project-2",
-    title: "Dummy OTA Project 2",
-    techstack: ["Next.js", "OTA", "Test"],
-    link: "https://example.com/dummy-ota-2",
-    image: "/assets/projects/dummy-ota-project-2.png",
-  },
 ];
 
 export { projects };
