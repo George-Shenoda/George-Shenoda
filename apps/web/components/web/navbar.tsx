@@ -80,7 +80,7 @@ function Navbar() {
 
     return (
         <header
-            className={`sticky transition-shadow duration-300 z-40 ${
+            className={`sticky transition-shadow duration-300 z-50 ${
                 scrolled ? "shadow-md shadow-black/5 dark:shadow-black/30" : ""
             } dark:bg-[#151d1dee] bg-[#eeeeeef2] backdrop-blur-md`}
             style={{ top: topOffset }}

@@ -39,7 +39,7 @@ export default function Contact() {
     if (!isDesktop) return;
     const outbox = createOutbox({
       storage: createLocalStorageStorage(OUTBOX_KEY),
-      submit: (payload) => submitContact(PRODUCTION_URL, payload),
+      submit: (payload) => submitContact(window.location.origin, payload),
     });
     outboxRef.current = outbox;
 
@@ -72,8 +72,8 @@ export default function Contact() {
     try {
       const result =
         window.electronAPI?.isDesktop === true
-          ? // Desktop app: use production URL to hit Vercel API with email config
-            await submitContact(PRODUCTION_URL, submitFormData)
+          ? // Desktop app: use local origin to hit local API
+            await submitContact(window.location.origin, submitFormData)
           : await sendContactEmail(submitFormData);
 
       if (result.success) {

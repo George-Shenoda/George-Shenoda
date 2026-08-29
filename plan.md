@@ -1,145 +1,42 @@
-# Implementation Plan: Desktop Contact Fix, Cooldown Update, Build Targets, Download Page
+# Plan: Fix Two Desktop-Only Issues
 
-**Status**: Complete (Ready for Release)  
-**Last Updated**: 2026-08-28
+## Issue 1: Navbar Under Topbar (Desktop Z-Index)
 
----
+**File:** `apps/web/components/web/navbar.tsx` line 83
 
-## Phase 1: Fix Desktop Contact Form Submission (HIGHEST PRIORITY)
+**Problem:** Navbar has `z-40`, TitleBar has `z-50` - Navbar renders under TitleBar on desktop
 
-**File**: `apps/web/components/web/Contact.tsx`
+**Fix:** Change `z-40` to `z-50` (or higher) so Navbar sits above TitleBar
 
-**Problem**: Desktop app uses `SITE_URL` (defaults to `https://localhost:3000`) for contact submissions, hitting local standalone server without email credentials → "Email service is not configured" error.
-
-**Solution**: 
-- Add constant `PRODUCTION_URL = 'https://george-shenoda.vercel.app'`
-- In `handleSubmit`, when `isDesktop`, use `PRODUCTION_URL` for `submitContact()` call
-- This ensures desktop app always hits Vercel API with proper email config
-
-**Test**: Create local test script to verify desktop contact form works with production URL before pushing.
-
----
-
-## Phase 2: Update Cooldown Logic (Web + Mobile)
-
-**Files**: 
-- `apps/web/components/web/Contact.tsx`
-- `apps/mobile/src/components/ContactForm.tsx`
-
-**Changes**:
-| Current | New |
-|---------|-----|
-| `COOLDOWN_MS = 10_000` | `COOLDOWN_MS = 5_000` |
-| Shows cooldown UI immediately after success | Cooldown UI **hidden** after success; status stays `'success'` |
-| Button shows "Wait Xs..." during cooldown | Button shows "Send Message" (enabled visually) |
-| | On click during cooldown: set status `'loading'`, disable button, show spinner |
-| | `setTimeout(remainingMs)` → then execute actual submit |
-| | If submit succeeds → reset cooldown; if fails → show error |
-
-**Logic Flow**:
-```
-User clicks Send → 
-  if (Date.now() < cooldownUntil) → 
-    status = 'loading' (spinner, disabled) → 
-    wait (cooldownUntil - now) ms → 
-    execute submit → 
-    on success: status = 'success', cooldownUntil = Date.now() + 5000
-  else → 
-    normal submit
+```diff
+- className={`sticky transition-shadow duration-300 z-40 ${...}`}
++ className={`sticky transition-shadow duration-300 z-50 ${...}`}
 ```
 
-**Cooldown Queue Behavior**: If user clicks multiple times during cooldown, only the first click triggers the delayed send. Subsequent clicks ignored until current send completes.
-
 ---
 
-## Phase 3: Adjust Build Targets
+## Issue 2: "Can't Reach Contact Server" on Desktop
 
-**File**: `electron-builder.yml`
+**File:** `apps/web/components/web/Contact.tsx` lines 74-77
 
-| Platform | Current Targets | New Targets |
-|----------|----------------|-------------|
-| Windows | `nsis`, `portable` | `nsis` only (Setup.exe) |
-| macOS | `dmg` (x64, arm64), `zip` (x64, arm64) | `dmg` only (x64, arm64) — **both .dmg files** |
-| Linux | `AppImage`, `deb` | `deb` only |
+**Problem:** Desktop mode uses hardcoded `PRODUCTION_URL` (`https://george-shenoda.vercel.app`) instead of local server URL. The desktop app runs a local Next.js server (both dev and production) at `http://127.0.0.1:<port>`. API calls should go to local origin.
 
----
+**Fix:** Use `window.location.origin` (works everywhere: local dev, Vercel, desktop app) or relative `/api/contact` URL
 
-## Phase 4: Android APK Renaming
-
-**File**: `.github/workflows/release.yml`
-
-In Android job (after APK download):
-```bash
-VERSION=$(node -e "console.log(require('./package.json').version)")
-mv app-release.apk "George-Shenoda-Portfolio-v${VERSION}.apk"
+```diff
+- const result = window.electronAPI?.isDesktop === true
+-   ? await submitContact(PRODUCTION_URL, submitFormData)
+-   : await sendContactEmail(submitFormData);
++ const result = window.electronAPI?.isDesktop === true
++   ? await submitContact(window.location.origin, submitFormData)
++   : await sendContactEmail(submitFormData);
 ```
-Update upload artifact path to match new filename.
+
+Alternative: Use relative URL `/api/contact` (works in all environments via fetch)
 
 ---
 
-## Phase 5: Create Download Page
+## Testing
 
-**New File**: `apps/web/app/download/page.tsx`
-
-**Features**:
-- **Client-side fetch** from `https://api.github.com/repos/George-Shenoda/George-Shenoda/releases/latest` (always current)
-- **Cached fallback**: If GitHub API fails, use static version from `package.json` + known asset naming patterns
-- Platform cards grid: Windows, macOS (both x64 & arm64), Linux, Android
-- Each card: icon, name, version, file type, download button
-- Auto-detect OS via `navigator.userAgent` → highlight recommended card
-- Download URLs: `https://github.com/George-Shenoda/George-Shenoda/releases/latest/download/<asset-filename>`
-- "View all releases" link to GitHub Releases page
-- Responsive design matching site aesthetic
-
-**Asset Filenames** (from workflow):
-- Windows: `George Shenoda Setup 0.1.0.exe`
-- macOS x64: `George Shenoda-0.1.0.dmg`
-- macOS arm64: `George Shenoda-0.1.0-arm64.dmg`
-- Linux: `my_portfolio-0.1.0.deb` (or similar)
-- Android: `George-Shenoda-Portfolio-v0.1.0.apk`
-
----
-
-## Phase 6: Add Download Navigation
-
-**File**: `apps/web/components/web/navbar.tsx` (or wherever nav is defined)
-
-Add "Download" link to `/download` in main navigation.
-
----
-
-## Phase 7: Test & Deploy
-
-1. **Local test**: Verify desktop contact form submits to production API
-2. **Build & test**: Run full build pipeline (web + desktop)
-3. **Push to main**: Trigger CI to verify workflows
-4. **Tag release**: `git tag v0.1.1` (or next version) → triggers release workflow with new configs
-5. **Verify GitHub Release**: Check all artifacts uploaded correctly with new naming
-
----
-
-## Progress Tracker
-
-| Phase | Task | Status |
-|-------|------|--------|
-| 1 | Fix desktop contact form (Contact.tsx) | ✅ Done |
-| 1 | Create local test script | ✅ Done |
-| 2 | Update web cooldown (Contact.tsx) | ✅ Done |
-| 2 | Update mobile cooldown (ContactForm.tsx) | ✅ Done |
-| 3 | Adjust build targets (electron-builder.yml) | ✅ Done |
-| 4 | Android APK rename (release.yml) | ✅ Done |
-| 5 | Create download page (download/page.tsx) | ✅ Done |
-| 6 | Add nav link (navbar.tsx) | ✅ Done |
-| 7 | Local build test | ✅ Done |
-| 7 | Push to main & tag release | ⬜ Pending |
-
----
-
-## Notes
-
-- **Production URL constant**: Hardcoded as `https://george-shenoda.vercel.app` in Contact.tsx
-- **Download page**: Client-side fetching with cached fallback for resilience
-- **macOS**: Both x64 and arm64 .dmg files shown with architecture labels
-- **Linux**: Only .deb package
-- **Windows**: Only Setup.exe (NSIS installer), no portable
-- **Android**: Renamed to `George-Shenoda-Portfolio-v{version}.apk`
+1. Run `npm run desktop:dev` - verify Navbar above TitleBar, contact form works
+2. Run `npm run desktop:build` + test built app - verify both fixes in production build
