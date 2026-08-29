@@ -5,19 +5,12 @@ import http from 'node:http';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import dotenv from 'dotenv';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DESKTOP_DIR = path.resolve(__dirname, '..');
 const APPS_DIR = path.resolve(DESKTOP_DIR, '..');
 const WEB_DIR = path.join(APPS_DIR, 'web');
 const REPO_ROOT = path.resolve(APPS_DIR, '..');
-
-// Load environment variables from web/.env for the Next.js server
-const webEnvPath = path.join(WEB_DIR, '.env');
-if (fs.existsSync(webEnvPath)) {
-  dotenv.config({ path: webEnvPath });
-}
 
 const BASE_PORT = 34567;
 const WINDOW_BG = '#0d1515';
