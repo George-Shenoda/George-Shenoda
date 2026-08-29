@@ -12,8 +12,8 @@ import {
 import { CheckCircle2, AlertCircle, Loader2, MailWarning } from 'lucide-react';
 import Reveal from './Reveal';
 
-const _SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://localhost:3000'; // eslint-disable-line @typescript-eslint/no-unused-vars
 const PRODUCTION_URL = 'https://george-shenoda.vercel.app';
+const LIVE_BASE = (process.env.NEXT_PUBLIC_SITE_URL?.trim() || PRODUCTION_URL).replace(/\/$/, '');
 const OUTBOX_KEY = 'portfolio-contact-outbox';
 const COOLDOWN_MS = 5_000;
 
@@ -35,11 +35,13 @@ export default function Contact() {
     typeof window !== 'undefined' && window.electronAPI?.isDesktop === true;
 
   // Desktop only: keep an offline outbox and flush it on reconnect/launch.
+  // Uses LIVE_BASE (production) so the bundled desktop doesn't need local SMTP creds
+  // — avoids "Email service is not configured" when .env is missing on the user's machine.
   useEffect(() => {
     if (!isDesktop) return;
     const outbox = createOutbox({
       storage: createLocalStorageStorage(OUTBOX_KEY),
-      submit: (payload) => submitContact(window.location.origin, payload),
+      submit: (payload) => submitContact(LIVE_BASE, payload),
     });
     outboxRef.current = outbox;
 
@@ -72,8 +74,8 @@ export default function Contact() {
     try {
       const result =
         window.electronAPI?.isDesktop === true
-          ? // Desktop app: use local origin to hit local API
-            await submitContact(window.location.origin, submitFormData)
+          ? // Desktop: hit production API (has SMTP creds) — local standalone would need bundled secrets
+            await submitContact(LIVE_BASE, submitFormData)
           : await sendContactEmail(submitFormData);
 
       if (result.success) {

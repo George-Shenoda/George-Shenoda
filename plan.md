@@ -1,8 +1,7 @@
-# Plan: Desktop OTA Project Images (fix/desktop-projects-image-ota)
+# Plan: Final Cleanup — Email/Footer/Dummy/Mobile APK (fix/final-cleanup-email-footer-dummy)
 
-## Scope: Desktop only (as requested). Mobile unchanged.
-
-### Issue 1 — Desktop: new/updated project images not visible after `git push` without rebuilding Electron
+## Previous: Desktop OTA Project Images (fix/desktop-projects-image-ota + v2) — merged
+### Issue 1 — Desktop: new/updated project images not visible after `git push` without rebuilding Electron (DONE)
 
 **Verified root cause:**
 - `apps/desktop/electron/assemble.mjs:24-25` copies `apps/web/.next/static` + `apps/web/public` into the standalone bundle ONCE at `desktop:build`. `apps/desktop/electron/main.mjs:102-130` serves that frozen copy. Any file added to `apps/web/public/assets/projects/` after that build is not in installed binaries — Vercel deploy alone does not update desktop.
@@ -39,3 +38,29 @@
 **Why v2:** Without `apps/web/.env`, `LIVE_BASE` baked as `""` → desktop never took remote branch and tried local `v1.png` missing in old bundle → blank. Async `isDesktop` also caused 1-tick local 404 flash.
 
 **OTA Test (feat/dummy-project-ota-test):** Added `dummy-ota-project` for verification (removed before release — dummy file deleted from `public/assets` and `packages/shared` on `main`).
+
+---
+
+## Current Tasks (fix/final-cleanup-email-footer-dummy)
+
+### 1. Email service is not configured in desktop — FIXED
+**Root cause:** `apps/web/lib/mailer.ts:248` requires `EMAIL_USER`/`EMAIL_PASS`; desktop spawns Next via `apps/desktop/electron/main.mjs:88-124` with only `PORT`/`HOSTNAME`/`ELECTRON_RUN_AS_NODE`, so local `/api/contact` (called via `apps/web/components/web/Contact.tsx:74` `submitContact(window.location.origin)`) fails with “Email service is not configured…” on any machine without a bundled `.env` (secrets should not be shipped in the installer).
+**Fix:**
+- `apps/web/components/web/Contact.tsx` — use remote `LIVE_BASE` (`https://george-shenoda.vercel.app`) for desktop: `submitContact(LIVE_BASE)` + outbox `submit(LIVE_BASE)` so production Vercel env handles SMTP. Keeps web path `sendContactEmail` server action.
+- `apps/desktop/electron/main.mjs` — add `dotenv` import and load `apps/web/.env` + `REPO_ROOT/.env` best-effort so local dev still works if .env exists; add `dotenv` to `apps/desktop/package.json:14`.
+- No secrets baked into desktop binary; offline queue still works via `packages/shared/src/outbox.ts`.
+
+### 2. Remove 2 dummy projects — DONE
+- `packages/shared/src/projects.ts` — removed `dummy-ota-project` + `dummy-ota-project-2`.
+- `apps/web/public/assets/projects/dummy-ota-project.png` + `dummy-ota-project-2.png` deleted.
+
+### 3. Remove Download link from footer in desktop — DONE
+- `apps/web/components/web/footer.tsx` — made `'use client'`, added `ALL_FOOTER_LINKS`, `isDesktop` detection (`window.electronAPI?.isDesktop`), filter out `/download` when desktop. Mirrors `navbar.tsx:121` already hiding Download in desktop header.
+
+### 4. GitHub workflow for mobile production APK — DONE
+- `apps/mobile/eas.json:16-19` — changed `production.android.buildType` from `app-bundle` → `apk` per prompt’s Expo workflow (production now produces apk).
+- New `.github/workflows/mobile-production-apk.yml` — two jobs:
+  - `eas-production-apk` (when `EXPO_TOKEN` set): `expo-github-action`, `eas build --platform android --profile production --wait`, download `artifacts.buildUrl` → `George-Shenoda-Portfolio-v*.apk`.
+  - `bare-production-apk` (fallback when no token): `setup-java@17` + `setup-android`, `expo prebuild`, keystore restore/generation (`keytool -genkeypair ... my-release-key.keystore` from prompt), write `MYAPP_RELEASE_*` to `android/gradle.properties`, patch `android/app/build.gradle` `signingConfigs.release` + `buildTypes.release.signingConfig`, `./gradlew assembleRelease` → `app-release.apk`.
+
+**Verification:** `typecheck`/`lint`/`build` pass, `isDesktop` footer hides Download, contact on desktop hits `https://george-shenoda.vercel.app/api/contact` (check Network tab), mobile workflow triggers on `v*` tag or `workflow_dispatch`.

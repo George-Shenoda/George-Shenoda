@@ -1,0 +1,168 @@
+name: Mobile Production APK
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  # EAS Production APK (Expo workflow) — preferred. Builds a production APK via EAS
+  # (eas.json production.android.buildType = apk). Requires EXPO_TOKEN secret.
+  eas-production-apk:
+    name: EAS Production APK
+    runs-on: ubuntu-latest
+    if: ${{ secrets.EXPO_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build production APK (EAS)
+        working-directory: apps/mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          eas build --platform android --profile production --non-interactive --wait --json > build.json
+          cat build.json
+          ARTIFACT_URL=$(node -e "const b=JSON.parse(require('fs').readFileSync('build.json','utf8')); const url=b[0]?.artifacts?.buildUrl || b[0]?.artifacts?.applicationArchiveUrl || ''; console.log(url)")
+          if [ -z "$ARTIFACT_URL" ] || [ "$ARTIFACT_URL" = "undefined" ]; then echo "No artifact URL in build.json"; cat build.json; exit 1; fi
+          echo "Downloading from $ARTIFACT_URL"
+          curl -fL "$ARTIFACT_URL" -o app-production.apk
+          VERSION=$(node -e "console.log(require('./package.json').version)")
+          mv app-production.apk "George-Shenoda-Portfolio-v${VERSION}-production.apk"
+          ls -lh *.apk
+
+      - name: Upload EAS production APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-production-apk-eas
+          path: apps/mobile/George-Shenoda-Portfolio-v*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+  # Bare workflow fallback — generates a signed APK via Gradle.
+  # Uses `expo prebuild` to materialize android/ (gitignored), then
+  # follows the 4 steps from the prompt: keystore → gradle.properties → build.gradle → assembleRelease.
+  # Requires secrets: ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+  # Alternatively, if no keystore secrets are set, builds an unsigned release (requires manual signing).
+  bare-production-apk:
+    name: Bare Production APK (Gradle)
+    runs-on: ubuntu-latest
+    if: ${{ secrets.EXPO_TOKEN == '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Expo prebuild (materialize android/)
+        working-directory: apps/mobile
+        run: |
+          npx expo prebuild --platform android --clean --non-interactive || npx expo prebuild --platform android --non-interactive
+          ls -la android/app/ || true
+
+      # 1. Generate / restore signing keystore
+      - name: Restore keystore from secret (if provided)
+        working-directory: apps/mobile/android/app
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 --decode > my-release-key.keystore
+            echo "Restored my-release-key.keystore from secret"
+            ls -lh my-release-key.keystore
+          else
+            echo "No ANDROID_KEYSTORE_BASE64 secret — generating ephemeral keystore for CI"
+            keytool -genkeypair -v -storetype PKCS12 -keystore my-release-key.keystore -alias my-key-alias -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=George Shenoda, OU=Portfolio, O=George, L=Cairo, S=Cairo, C=EG"
+            ls -lh my-release-key.keystore
+          fi
+
+      # 2. Configure Gradle variables
+      - name: Configure gradle.properties signing vars
+        working-directory: apps/mobile/android
+        env:
+          STORE_FILE: my-release-key.keystore
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || 'my-key-alias' }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'android' }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || 'android' }}
+        run: |
+          {
+            echo "MYAPP_RELEASE_STORE_FILE=$STORE_FILE"
+            echo "MYAPP_RELEASE_KEY_ALIAS=$KEY_ALIAS"
+            echo "MYAPP_RELEASE_STORE_PASSWORD=$STORE_PASSWORD"
+            echo "MYAPP_RELEASE_KEY_PASSWORD=$KEY_PASSWORD"
+          } >> gradle.properties
+          cat gradle.properties
+
+      # 3. Add signingConfigs to android/app/build.gradle (idempotent)
+      - name: Patch android/app/build.gradle signingConfigs
+        working-directory: apps/mobile/android/app
+        run: |
+          if ! grep -q "MYAPP_RELEASE_STORE_FILE" build.gradle; then
+            echo "Patching build.gradle with release signingConfigs"
+            # This uses a node script to do a safe insertion
+            node -e "
+              const fs=require('fs');
+              let s=fs.readFileSync('build.gradle','utf8');
+              if(!s.includes('signingConfigs')){ console.error('No signingConfigs block found'); process.exit(0); }
+              if(s.includes('MYAPP_RELEASE_STORE_FILE')) process.exit(0);
+              s=s.replace(/signingConfigs\s*\{/, \`signingConfigs {
+                  release {
+                      if (project.hasProperty('MYAPP_RELEASE_STORE_FILE')) {
+                          storeFile file(MYAPP_RELEASE_STORE_FILE)
+                          storePassword MYAPP_RELEASE_STORE_PASSWORD
+                          keyAlias MYAPP_RELEASE_KEY_ALIAS
+                          keyPassword MYAPP_RELEASE_KEY_PASSWORD
+                      }
+                  }\`);
+              s=s.replace(/buildTypes\s*\{\s*release\s*\{/, \`buildTypes {
+                  release {
+                      signingConfig signingConfigs.release\`);
+              fs.writeFileSync('build.gradle', s);
+              console.log('Patched');
+            "
+          fi
+          grep -A 8 "signingConfigs" build.gradle | head -n 20 || true
+
+      # 4. Generate the Release APK
+      - name: Build production APK (Gradle)
+        working-directory: apps/mobile/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --stacktrace
+          ls -lh app/build/outputs/apk/release/
+
+      - name: Upload bare production APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-production-apk-bare
+          path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
