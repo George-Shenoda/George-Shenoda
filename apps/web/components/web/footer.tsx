@@ -12,6 +12,7 @@ function Footer() {
                     { href: "#projects", label: "Projects" },
                     { href: "#contact", label: "Contact" },
                     { href: "/privacy", label: "Privacy" },
+                    { href: "/download", label: "Download" },
                 ].map(({ href, label }) => (
                     <Link
                         key={href}

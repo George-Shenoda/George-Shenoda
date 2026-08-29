@@ -17,7 +17,6 @@ const ALL_NAV_LINKS = [
     { id: "workflow", label: "Workflow", href: "#workflow" },
     { id: "projects", label: "Projects", href: "#projects" },
     { id: "contact", label: "Contact", href: "#contact" },
-    { id: "download", label: "Download", href: "/download" },
 ] as const;
 
 function Navbar() {
@@ -40,12 +39,6 @@ function Navbar() {
         setIsDesktop(desktop);
     }, []);
 
-    // Filter out download link in desktop mode
-    const NAV_LINKS = useMemo(
-        () => ALL_NAV_LINKS.filter((link) => !(isDesktop && link.id === "download")),
-        [isDesktop]
-    );
-
     useEffect(() => {
         const update = () => {
             const scrollY = window.scrollY;
@@ -56,8 +49,8 @@ function Navbar() {
             let current = "";
             const isNearBottom = max > 0 && scrollY >= max - 100;
 
-            for (let i = NAV_LINKS.length - 1; i >= 0; i--) {
-                const { id } = NAV_LINKS[i];
+            for (let i = ALL_NAV_LINKS.length - 1; i >= 0; i--) {
+                const { id } = ALL_NAV_LINKS[i];
                 const el = document.getElementById(id);
                 if (!el) continue;
 
@@ -80,7 +73,7 @@ function Navbar() {
             window.removeEventListener("scroll", update);
             window.removeEventListener("resize", update);
         };
-    }, [NAV_LINKS]);
+    }, [ALL_NAV_LINKS]);
 
     const topOffset = isDesktop ? titlebarHeight : 0;
 
@@ -99,7 +92,7 @@ function Navbar() {
                     George Shenoda
                 </button>
                 <nav className="hidden items-center gap-6 md:flex" aria-label="Primary">
-                    {NAV_LINKS.map(({ id, label, href }) => (
+                    {ALL_NAV_LINKS.map(({ id, label, href }) => (
                         <button
                             key={id}
                             onClick={() => {
@@ -125,7 +118,17 @@ function Navbar() {
                 </nav>
                 <div className="flex items-center gap-2">
                     <ThemeSwitcher />
-<Button
+                    {isDesktop && (
+                        <Button
+                            render={<Link href="/download" />}
+                            variant="ghost"
+                            className="hidden h-11 rounded-full px-4 text-[15px] font-medium text-foreground/80 hover:text-primary sm:inline-flex"
+                            nativeButton={false}
+                        >
+                            Download
+                        </Button>
+                    )}
+                    <Button
                         variant="ghost"
                         className="hidden h-11 rounded-full px-4 text-[15px] font-medium text-foreground/80 hover:text-primary sm:inline-flex"
                         render={<Link href="/cv" />}
@@ -157,7 +160,7 @@ function Navbar() {
                             }
                         />
                         <DropdownMenuContent align="end" className="min-w-44">
-                            {NAV_LINKS.map(({ id, label, href }) => (
+                            {ALL_NAV_LINKS.map(({ id, label, href }) => (
                                 <DropdownMenuItem
                                     key={id}
                                     onClick={() => {
