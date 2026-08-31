@@ -262,9 +262,14 @@ export async function sendContactEmail(formData: {
       },
     });
 
-    const sanitizedName = stripCrlf(name.trim());
-    const sanitizedEmail = email.trim();
+    const sanitizedName = stripCrlf(name.trim()).replace(/"/g, "'");
+    const sanitizedEmail = stripCrlf(email.trim());
     const sanitizedMessage = message.trim();
+
+    // Warn when CONTACT_TO_EMAIL/EMAIL_TO not configured — email will go to sender account
+    if (toEmail === emailUser) {
+      console.warn('[mailer] EMAIL_TO/CONTACT_TO_EMAIL not set — delivering contact mail to EMAIL_USER itself');
+    }
 
     // 4. Send Email via Gmail SMTP
     await transporter.sendMail({

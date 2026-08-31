@@ -18,10 +18,12 @@ const GA_ID = process.env.GOOGLE_ANALYTICS_ID;
 function Analytics() {
     if (!GA_ID) return null;
 
+    // JSON.stringify escapes quotes/breakouts if env contains special chars (S-04 fix)
+    const gaIdJson = JSON.stringify(GA_ID);
     return (
         <>
             <Script
-                src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+                src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_ID)}`}
                 strategy="afterInteractive"
             />
             <Script id="google-analytics" strategy="afterInteractive">
@@ -29,7 +31,7 @@ function Analytics() {
                     window.dataLayer = window.dataLayer || [];
                     function gtag(){dataLayer.push(arguments);}
                     gtag('js', new Date());
-                    gtag('config', '${GA_ID}');
+                    gtag('config', ${gaIdJson});
                 `}
             </Script>
         </>

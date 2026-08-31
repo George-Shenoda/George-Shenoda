@@ -9,22 +9,38 @@ on:
 jobs:
   # EAS Production APK (Expo workflow) — preferred. Builds a production APK via EAS
   # (eas.json production.android.buildType = apk). Requires EXPO_TOKEN secret.
+  # NOTE: `secrets` context is not available in `jobs.<id>.if`; token presence is
+  # checked at step level (first step sets output, remaining steps gate on it).
   eas-production-apk:
     name: EAS Production APK
     runs-on: ubuntu-latest
-    if: ${{ secrets.EXPO_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check Expo token presence
+        id: check-token
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+            echo "EXPO_TOKEN not set — skipping EAS build steps"
+          else
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/setup-node@v4
+        if: steps.check-token.outputs.has_token == 'true'
         with:
           node-version: 22
           cache: npm
 
       - name: Install dependencies
+        if: steps.check-token.outputs.has_token == 'true'
         run: npm ci
 
       - name: Setup Expo
+        if: steps.check-token.outputs.has_token == 'true'
         uses: expo/expo-github-action@v8
         with:
           expo-version: latest
@@ -32,6 +48,7 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Build production APK (EAS)
+        if: steps.check-token.outputs.has_token == 'true'
         working-directory: apps/mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -47,6 +64,7 @@ jobs:
           ls -lh *.apk
 
       - name: Upload EAS production APK
+        if: steps.check-token.outputs.has_token == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: mobile-production-apk-eas
@@ -59,30 +77,47 @@ jobs:
   # follows the 4 steps from the prompt: keystore → gradle.properties → build.gradle → assembleRelease.
   # Requires secrets: ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
   # Alternatively, if no keystore secrets are set, builds an unsigned release (requires manual signing).
+  # Runs only when EXPO_TOKEN is not set (checked at step level — `secrets` unavailable in jobs.<id>.if).
   bare-production-apk:
     name: Bare Production APK (Gradle)
     runs-on: ubuntu-latest
-    if: ${{ secrets.EXPO_TOKEN == '' }}
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check Expo token absence
+        id: check-token
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+            echo "EXPO_TOKEN is set — EAS job will handle build, skipping bare Gradle build"
+          fi
+
       - uses: actions/setup-node@v4
+        if: steps.check-token.outputs.has_token == 'false'
         with:
           node-version: 22
           cache: npm
 
       - uses: actions/setup-java@v4
+        if: steps.check-token.outputs.has_token == 'false'
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Setup Android SDK
+        if: steps.check-token.outputs.has_token == 'false'
         uses: android-actions/setup-android@v3
 
       - name: Install dependencies
+        if: steps.check-token.outputs.has_token == 'false'
         run: npm ci
 
       - name: Expo prebuild (materialize android/)
+        if: steps.check-token.outputs.has_token == 'false'
         working-directory: apps/mobile
         run: |
           npx expo prebuild --platform android --clean --non-interactive || npx expo prebuild --platform android --non-interactive
@@ -90,6 +125,7 @@ jobs:
 
       # 1. Generate / restore signing keystore
       - name: Restore keystore from secret (if provided)
+        if: steps.check-token.outputs.has_token == 'false'
         working-directory: apps/mobile/android/app
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -106,6 +142,7 @@ jobs:
 
       # 2. Configure Gradle variables
       - name: Configure gradle.properties signing vars
+        if: steps.check-token.outputs.has_token == 'false'
         working-directory: apps/mobile/android
         env:
           STORE_FILE: my-release-key.keystore
@@ -123,6 +160,7 @@ jobs:
 
       # 3. Add signingConfigs to android/app/build.gradle (idempotent)
       - name: Patch android/app/build.gradle signingConfigs
+        if: steps.check-token.outputs.has_token == 'false'
         working-directory: apps/mobile/android/app
         run: |
           if ! grep -q "MYAPP_RELEASE_STORE_FILE" build.gradle; then
@@ -153,6 +191,7 @@ jobs:
 
       # 4. Generate the Release APK
       - name: Build production APK (Gradle)
+        if: steps.check-token.outputs.has_token == 'false'
         working-directory: apps/mobile/android
         run: |
           chmod +x gradlew
@@ -160,6 +199,7 @@ jobs:
           ls -lh app/build/outputs/apk/release/
 
       - name: Upload bare production APK
+        if: steps.check-token.outputs.has_token == 'false'
         uses: actions/upload-artifact@v4
         with:
           name: mobile-production-apk-bare
