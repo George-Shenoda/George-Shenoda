@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
   images: {
     unoptimized: true,
-    domains: ["placehold.co"],
+    remotePatterns: [{ protocol: 'https', hostname: 'placehold.co' }],
   },
   async headers() {
     return [

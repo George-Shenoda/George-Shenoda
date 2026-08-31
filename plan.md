@@ -1,66 +1,60 @@
-# Plan: Final Cleanup — Email/Footer/Dummy/Mobile APK (fix/final-cleanup-email-footer-dummy)
+# Plan: Audit fixes A+B+C + workflow invalid file (audit/fix-a-b-c-workflow)
 
-## Previous: Desktop OTA Project Images (fix/desktop-projects-image-ota + v2) — merged
-### Issue 1 — Desktop: new/updated project images not visible after `git push` without rebuilding Electron (DONE)
+## Context
+User approved PASS 1 findings fix in three groups plus workflow check failure:
+`Invalid workflow file .github/workflows/mobile-production-apk.yml (Line 15, Col 9): Unrecognized named-value: 'secrets' at jobs.<job>.if`
 
-**Verified root cause:**
-- `apps/desktop/electron/assemble.mjs:24-25` copies `apps/web/.next/static` + `apps/web/public` into the standalone bundle ONCE at `desktop:build`. `apps/desktop/electron/main.mjs:102-130` serves that frozen copy. Any file added to `apps/web/public/assets/projects/` after that build is not in installed binaries — Vercel deploy alone does not update desktop.
-- `apps/web/components/web/projects.tsx:39-45,80` does OTA-fetch the JSON list via `${LIVE_BASE}/api/projects` (`packages/shared/src/projects.ts` -> `apps/web/app/api/projects/route.ts:1-9`), so NEW project entries appear, but images stay local:
-- `apps/web/components/web/Project.tsx:18-24` strips `LIVE_BASE` prefix (`optimizedSrc = image.slice(LIVE_BASE.length)`) and forces `next/image` from `http://127.0.0.1:<port>/assets/...` (frozen local copy). Cross-origin `<img>` branch `42-50` is never taken for `LIVE_BASE` images.
+Root cause: `secrets` context is not available in `jobs.<job>.if` (GitHub Actions docs: `secrets` only at step/job `env`/`with`, not at job `if` in reusable workflows on some runners). The file used `if: ${{ secrets.EXPO_TOKEN != '' }}` at job level for both jobs, causing parser error.
 
-**Chosen solution — Desktop A (OTA cross-origin, offline fallback):**
-- When running inside Electron (`window.electronAPI?.isDesktop === true`) and `NEXT_PUBLIC_SITE_URL` is set, keep remote `src` as `https://site.vercel.app/assets/projects/*.png` and render as plain `<img>` (cross-origin), not `next/image`. No stripping.
-- Otherwise (web, or desktop without `LIVE_BASE`, or offline with fetch failure) fall back to local `/assets/...` via `next/image`.
-- Add `onError` fallback: if remote image 404/offline, swap to local bundled path so offline desktop still shows snapshot.
-- Add `cache: 'no-store'` to client fetch (`projects.tsx:19-27`) and `Cache-Control: no-store, must-revalidate` to `apps/web/app/api/projects/route.ts:6` + `next.config.ts` headers so JSON list is never CDN-cached.
-- `next/image` stays `unoptimized: true` — no change needed for images domain; cross-origin `<img>` bypasses Next optimizer.
+## Branch
+`audit/fix-a-b-c-workflow` — commit messages = branch name per AGENTS.md
 
-**Files to modify (v1 + v2 hotfix):**
-1. `apps/web/components/web/Project.tsx` — detect `isDesktop` synchronously via `useState(()=> window.electronAPI?.isDesktop)` (fixes blank first-render for new OTA images not in bundled snapshot), `LIVE_BASE` fallback to `https://george-shenoda.vercel.app` when `NEXT_PUBLIC_SITE_URL` not baked (fixes `LIVE_BASE=""` on `ELECTRON_BUILD` without local `.env`), `shouldUseRemote` + `onError` fallback to local.
-2. `apps/web/components/web/projects.tsx` — same `LIVE_BASE` fallback, `fetchProjectsJson` with `fetch(url,{cache:'no-store'})`.
-3. `apps/web/app/api/projects/route.ts` — add `Cache-Control: no-store, must-revalidate`, `CDN-Cache-Control: no-store`, `Vary: Origin`.
-4. `apps/web/next.config.ts` — add `async headers()` for `/api/projects` to enforce no-store (defense in depth, Vercel respects `next.config` headers).
+## Group A — Security (may change behavior, intentional)
+1. S-01 `apps/web/lib/mailer.ts:266` — sanitize email with `stripCrlf` before `replyTo`/`to`; also escape `"` in display name (S-11).
+2. S-03 `apps/web/lib/rate-limit.ts` — prune expired entries, cap map size (prevent unbounded Map).
+3. S-04 `apps/web/components/Analytics.tsx:29` — escape `GA_ID` via `JSON.stringify` instead of `'${GA_ID}'`.
+4. S-07 `apps/web/app/api/contact/route.ts:57` — enforce body size after `JSON.parse`, not just `content-length`.
+5. S-02 `apps/web/lib/rate-limit.ts:33` — document trust for `x-forwarded-for`; on Vercel prefer `x-vercel-forwarded-for` or take last entry; add helper to pick client IP safely.
+6. S-05 `apps/desktop/electron/main.mjs:32` — make `filterEnv` actually filter or remove dead code (no behavior change for desktop prod via LIVE_BASE fallback).
+7. S-08/H-05 — add `queuedAt` note / warn on `EMAIL_TO` fallback (minimal).
 
-**Non-goals (desktop-only):**
-- Mobile not touched (`apps/mobile/src/components/ProjectsSection.tsx`, `apps/mobile/src/config.ts`, `apps/mobile/App.tsx` unchanged).
-- No `electron-updater`, no asset hash renaming, no `expo-image` migration.
+Tests: `npm test` covers mailer/rate-limit; desktop main.mjs has 0 tests — risky, verify manually with `npm run build -w @portfolio/web`.
 
-**Verification:**
-- `npm run typecheck -w @portfolio/web` + `npm run lint -w @portfolio/web` + `npm run build -w @portfolio/web` pass.
-- Dev: `NEXT_PUBLIC_SITE_URL=https://george-shenoda.vercel.app npm run desktop:dev` — add new entry + new PNG to `packages/shared/src/projects.ts` + `public/assets/projects/`, push to Vercel, confirm installed/dev desktop shows new image without `desktop:build` (live URL loads). Overwrite existing PNG same name, confirm desktop shows new bytes (remote URL reflects new Vercel deploy).
-- Offline: disconnect network, relaunch desktop — `/api/projects` fallback renders `bundledProjects`, remote image `onError` swaps to local bundled PNG (no blank).
-- Headers: `curl -I https://.../api/projects` shows `no-store`.
+## Group B — Dependencies (patch/minor only, no breaking majors)
+Update via `npm update` / manual bumps (wanted → latest where safe):
+- `expo 57.0.16→57.0.18`, `expo-asset 57.0.14→57.0.15`, `expo-file-system 57.0.5→57.0.6`, `expo-font 57.0.1→57.0.2`, `expo-sharing 57.0.15→57.0.16`
+- `nodemailer 9.0.5→9.0.6`, `lucide-react 1.33→1.38`, `lucide-react-native 1.34→1.38`, `resend 6.22→6.25`
+- `next 16.3.0→16.3.3`, `eslint-config-next 16.3.0→16.3.3`, `@testing-library/react 16.3.2→16.3.3`, `@types/react-dom 19.2.4→19.2.5`
+- Seal lockfile with `npm install` after bumps.
 
-**Branches:**
-- `fix/desktop-projects-image-ota` (merged) — initial OTA + headers.
-- `fix/desktop-projects-image-ota-v2` (merged) — hotfix fallback URL + sync desktop detect (fixes "images isn't rendering at all").
+**Deferred majors (flag only, no apply):** `electron 33→44`, `electron-builder 25→26.15.3` (fixes critical `tar`), `typescript 7`, `eslint 10`, `@types/node 26`, `@react-native-async-storage 3`, `cross-env 10`, `expo major`. Will list migration notes.
 
-**Why v2:** Without `apps/web/.env`, `LIVE_BASE` baked as `""` → desktop never took remote branch and tried local `v1.png` missing in old bundle → blank. Async `isDesktop` also caused 1-tick local 404 flash.
+## Group C — Safe cleanups (must NOT change behavior)
+- R-02 `apps/web/next.config.ts:8` — migrate `images.domains` → `images.remotePatterns` for `placehold.co`.
+- R-01 delete dead `pendingSubmitRef` in `Contact.tsx:31-32` and `mobile/ContactForm.tsx:51-52`.
+- R-03 `apps/web/app/download/page.tsx:219` — collapse duplicate recommended loop.
+- D-01 extract `LIVE_BASE` to `apps/web/lib/site.ts` and import in `Project.tsx`/`projects.tsx`/`Contact.tsx`.
+- D-02 shared `isValidEmail` in `packages/shared` or `apps/web/lib/sanitize.ts`, reuse in mailer + both Contact forms.
+- D-04 extract `emailLayout` helper in `mailer.ts`.
+- R-06 `apps/mobile/src/components/ContactForm.tsx:212` — fix spinner leak with `cancelAnimation`.
+- H-01/H-02 add `AbortSignal.timeout(8000)` and `cache: 'no-store'` to GitHub API + projects fetch.
+- H-06 workflow env hygiene (use `env:` not `$GITHUB_ENV` for secrets) — low priority, note only.
 
-**OTA Test (feat/dummy-project-ota-test):** Added `dummy-ota-project` for verification (removed before release — dummy file deleted from `public/assets` and `packages/shared` on `main`).
+## Workflow fix — mobile-production-apk.yml
+- Remove `jobs.<job>.if: ${{ secrets.EXPO_TOKEN ... }}` (15,65).
+- Replace with step-level gate: add `Check Expo token present` step that sets `output` via `if: true` then `if: steps.check.outputs.has_token == 'true'` for EAS job steps, or make jobs unconditional and early-exit. Simpler: remove job-level if entirely and add `if: ${{ secrets.EXPO_TOKEN != '' }}` at step level + make `bare-production-apk` run only when EAS didn't run via `needs` or via inverse step check.
+- Correct pattern per GitHub docs: keep jobs without `if: secrets`, use `if: ${{ vars.HAS_EXPO_TOKEN }}` is not ideal; simplest robust: remove job `if`, add first step `Check for EXPO_TOKEN` that does `if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then echo "skip=true" >> $GITHUB_OUTPUT; fi` and gate remaining steps with `if: steps.check.outputs.skip != 'true'`. For two jobs, gate each job's steps inversely.
+- Ensure workflow parses: `actionlint` equivalent — `secrets` only in `steps.with`/`env`.
 
----
+## Order & verification
+1. Fix workflow file first (otherwise CI fails on every push).
+2. Group A → `npm run build -w @portfolio/web` + `npm test` → `git commit -m "audit/fix-a-b-c-workflow"` → `git push -u origin audit/fix-a-b-c-workflow`
+3. Group B → same verify → commit+push
+4. Group C → same verify → commit+push
+5. Final PR to `main` via `gh pr create`.
 
-## Current Tasks (fix/final-cleanup-email-footer-dummy)
-
-### 1. Email service is not configured in desktop — FIXED
-**Root cause:** `apps/web/lib/mailer.ts:248` requires `EMAIL_USER`/`EMAIL_PASS`; desktop spawns Next via `apps/desktop/electron/main.mjs:88-124` with only `PORT`/`HOSTNAME`/`ELECTRON_RUN_AS_NODE`, so local `/api/contact` (called via `apps/web/components/web/Contact.tsx:74` `submitContact(window.location.origin)`) fails with “Email service is not configured…” on any machine without a bundled `.env` (secrets should not be shipped in the installer).
-**Fix:**
-- `apps/web/components/web/Contact.tsx` — use remote `LIVE_BASE` (`https://george-shenoda.vercel.app`) for desktop: `submitContact(LIVE_BASE)` + outbox `submit(LIVE_BASE)` so production Vercel env handles SMTP. Keeps web path `sendContactEmail` server action.
-- `apps/desktop/electron/main.mjs` — add `dotenv` import and load `apps/web/.env` + `REPO_ROOT/.env` best-effort so local dev still works if .env exists; add `dotenv` to `apps/desktop/package.json:14`.
-- No secrets baked into desktop binary; offline queue still works via `packages/shared/src/outbox.ts`.
-
-### 2. Remove 2 dummy projects — DONE
-- `packages/shared/src/projects.ts` — removed `dummy-ota-project` + `dummy-ota-project-2`.
-- `apps/web/public/assets/projects/dummy-ota-project.png` + `dummy-ota-project-2.png` deleted.
-
-### 3. Remove Download link from footer in desktop — DONE
-- `apps/web/components/web/footer.tsx` — made `'use client'`, added `ALL_FOOTER_LINKS`, `isDesktop` detection (`window.electronAPI?.isDesktop`), filter out `/download` when desktop. Mirrors `navbar.tsx:121` already hiding Download in desktop header.
-
-### 4. GitHub workflow for mobile production APK — DONE
-- `apps/mobile/eas.json:16-19` — changed `production.android.buildType` from `app-bundle` → `apk` per prompt’s Expo workflow (production now produces apk).
-- New `.github/workflows/mobile-production-apk.yml` — two jobs:
-  - `eas-production-apk` (when `EXPO_TOKEN` set): `expo-github-action`, `eas build --platform android --profile production --wait`, download `artifacts.buildUrl` → `George-Shenoda-Portfolio-v*.apk`.
-  - `bare-production-apk` (fallback when no token): `setup-java@17` + `setup-android`, `expo prebuild`, keystore restore/generation (`keytool -genkeypair ... my-release-key.keystore` from prompt), write `MYAPP_RELEASE_*` to `android/gradle.properties`, patch `android/app/build.gradle` `signingConfigs.release` + `buildTypes.release.signingConfig`, `./gradlew assembleRelease` → `app-release.apk`.
-
-**Verification:** `typecheck`/`lint`/`build` pass, `isDesktop` footer hides Download, contact on desktop hits `https://george-shenoda.vercel.app/api/contact` (check Network tab), mobile workflow triggers on `v*` tag or `workflow_dispatch`.
+## Risks
+- Rate-limit helper change is sensitive — Vercel header behavior must be tested (`x-forwarded-for` can contain multiple IPs).
+- Email CRLF fix is safe (additive sanitization).
+- GA escaping safe.
+- Dependency bumps are patch/minor, covered by 116 tests.

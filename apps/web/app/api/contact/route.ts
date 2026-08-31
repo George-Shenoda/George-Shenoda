@@ -72,6 +72,23 @@ export async function POST(request: Request) {
     );
   }
 
+  // Enforce body size after parsing (covers chunked requests with no content-length, S-07)
+  try {
+    const serialized = JSON.stringify(payload);
+    if (serialized.length > MAX_BODY_SIZE) {
+      return Response.json(
+        { success: false, error: 'Request body too large.' },
+        { status: 413, headers }
+      );
+    }
+  } catch {
+    // JSON.stringify failed (circular etc.) — treat as invalid
+    return Response.json(
+      { success: false, error: 'Invalid request body.' },
+      { status: 400, headers }
+    );
+  }
+
   const { name, email, message, website } = (payload ?? {}) as {
     name?: unknown;
     email?: unknown;

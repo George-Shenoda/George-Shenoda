@@ -29,10 +29,16 @@ for (const p of [path.join(WEB_DIR, '.env'), path.join(REPO_ROOT, '.env')]) {
   if (fs.existsSync(p)) dotenv.config({ path: p, override: false });
 }
 
-const SENSITIVE_ENV_VARS = [];
+const SENSITIVE_ENV_VARS = [
+  'EMAIL_USER', 'EMAIL_PASS', 'GMAIL_USER', 'GMAIL_PASS', 'GMAIL_APP_PASSWORD',
+  'EMAIL_TO', 'CONTACT_TO_EMAIL', 'WIN_CSC_LINK', 'WIN_CSC_KEY_PASSWORD',
+  'CSC_LINK', 'CSC_KEY_PASSWORD', 'APPLE_ID', 'APPLE_APP_SPECIFIC_PASSWORD', 'APPLE_TEAM_ID',
+];
 
 function filterEnv(env) {
-  return { ...env };
+  const out = { ...env };
+  for (const k of SENSITIVE_ENV_VARS) delete out[k];
+  return out;
 }
 
 let win = null;

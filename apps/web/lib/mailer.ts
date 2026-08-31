@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { escapeHtml, stripCrlf } from './sanitize';
+import { escapeHtml, isValidEmail, stripCrlf } from './sanitize';
 
 export type ContactFormState = {
   success?: boolean;
@@ -8,16 +8,7 @@ export type ContactFormState = {
   networkError?: boolean;
 };
 
-function buildContactEmailHtml(name: string, email: string, message: string) {
-  const safeName = escapeHtml(name);
-  const safeEmail = escapeHtml(email);
-  const safeMessage = escapeHtml(message);
-  return `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <style>
+const EMAIL_STYLES = `
           body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: #f4f4f5;
@@ -83,15 +74,38 @@ function buildContactEmailHtml(name: string, email: string, message: string) {
             font-size: 13px;
             color: #a1a1aa;
             text-align: center;
-          }
+          }`;
+
+function emailWrapper(title: string, subtitle: string, body: string, footer: string): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>${EMAIL_STYLES}
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <h1 class="title">New Contact Message</h1>
-            <p class="subtitle">Sent from your portfolio website</p>
+            <h1 class="title">${title}</h1>
+            <p class="subtitle">${subtitle}</p>
           </div>
+          ${body}
+          <div class="footer">
+            ${footer}
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+function buildContactEmailHtml(name: string, email: string, message: string) {
+  const safeName = escapeHtml(name);
+  const safeEmail = escapeHtml(email);
+  const safeMessage = escapeHtml(message);
+  const body = `
           <div class="field">
             <div class="label">Sender Name</div>
             <div class="value">${safeName}</div>
@@ -103,90 +117,20 @@ function buildContactEmailHtml(name: string, email: string, message: string) {
           <div class="field">
             <div class="label">Message</div>
             <div class="message-box">${safeMessage}</div>
-          </div>
-          <div class="footer">
-            Hit "Reply" in your email client to respond directly to ${safeName} (${safeEmail}).
-          </div>
-        </div>
-      </body>
-    </html>
-  `;
+          </div>`;
+  return emailWrapper(
+    'New Contact Message',
+    'Sent from your portfolio website',
+    body,
+    `Hit "Reply" in your email client to respond directly to ${safeName} (${safeEmail}).`
+  );
 }
 
 function buildAutoReplyHtml(name: string, email: string, fromEmail: string | undefined) {
   const safeName = escapeHtml(name);
   const safeEmail = escapeHtml(email);
   const safeFromEmail = escapeHtml(fromEmail ?? '');
-  return `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <style>
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f4f4f5;
-            margin: 0;
-            padding: 24px;
-            color: #18181b;
-          }
-          .container {
-            max-width: 580px;
-            margin: 0 auto;
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 32px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            border: 1px solid #e4e4e7;
-          }
-          .header {
-            border-bottom: 2px solid #f4f4f5;
-            padding-bottom: 20px;
-            margin-bottom: 24px;
-          }
-          .title {
-            font-size: 22px;
-            font-weight: 700;
-            color: #09090b;
-            margin: 0 0 6px;
-          }
-          .subtitle {
-            font-size: 14px;
-            color: #71717a;
-            margin: 0;
-          }
-          .field {
-            margin-bottom: 20px;
-          }
-          .label {
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 600;
-            color: #71717a;
-            margin-bottom: 6px;
-          }
-          .value {
-            font-size: 16px;
-            color: #18181b;
-            font-weight: 500;
-          }
-          .footer {
-            margin-top: 32px;
-            padding-top: 20px;
-            border-top: 1px solid #f4f4f5;
-            font-size: 13px;
-            color: #a1a1aa;
-            text-align: center;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1 class="title">Thank You for Your Message!</h1>
-            <p class="subtitle">I'll get back to you soon</p>
-          </div>
+  const body = `
           <div class="field">
             <div class="label">To</div>
             <div class="value">${safeEmail}</div>
@@ -202,14 +146,13 @@ function buildAutoReplyHtml(name: string, email: string, fromEmail: string | und
           <div class="field">
             <div class="label">Message</div>
             <div class="value">Thank you for contacting me! I have received your message and will get back to you as soon as possible.</div>
-          </div>
-          <div class="footer">
-            This is an automated confirmation. You can reply to this email to continue the conversation.
-          </div>
-        </div>
-      </body>
-    </html>
-  `;
+          </div>`;
+  return emailWrapper(
+    'Thank You for Your Message!',
+    "I'll get back to you soon",
+    body,
+    'This is an automated confirmation. You can reply to this email to continue the conversation.'
+  );
 }
 
 export async function sendContactEmail(formData: {
@@ -225,8 +168,7 @@ export async function sendContactEmail(formData: {
       return { success: false, error: 'Please enter a valid name (at least 2 characters).' };
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || !emailRegex.test(email.trim())) {
+    if (!email || !isValidEmail(email)) {
       return { success: false, error: 'Please enter a valid email address.' };
     }
 
@@ -262,9 +204,14 @@ export async function sendContactEmail(formData: {
       },
     });
 
-    const sanitizedName = stripCrlf(name.trim());
-    const sanitizedEmail = email.trim();
+    const sanitizedName = stripCrlf(name.trim()).replace(/"/g, "'");
+    const sanitizedEmail = stripCrlf(email.trim());
     const sanitizedMessage = message.trim();
+
+    // Warn when CONTACT_TO_EMAIL/EMAIL_TO not configured — email will go to sender account
+    if (toEmail === emailUser) {
+      console.warn('[mailer] EMAIL_TO/CONTACT_TO_EMAIL not set — delivering contact mail to EMAIL_USER itself');
+    }
 
     // 4. Send Email via Gmail SMTP
     await transporter.sendMail({

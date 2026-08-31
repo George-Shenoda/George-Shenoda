@@ -137,6 +137,8 @@ export default function DownloadPage() {
           headers: {
             Accept: 'application/vnd.github.v3+json',
           },
+          cache: 'no-store',
+          signal: AbortSignal.timeout(8000),
         });
 
         if (!response.ok) {
@@ -213,11 +215,6 @@ export default function DownloadPage() {
         const activePlatforms = Object.values(platformMap).filter((p) => p.files.length > 0);
         activePlatforms.forEach((p) => {
           p.recommended = p.id === recommendedPlatform;
-        });
-
-        // Ensure recommended is boolean
-        activePlatforms.forEach((p) => {
-          p.recommended = p.recommended ?? false;
         });
 
         setRelease(data);
