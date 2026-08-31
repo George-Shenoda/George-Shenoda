@@ -21,15 +21,12 @@ async function fetchProjectsJson(url: string): Promise<Project[] | null> {
 }
 
 function Projects() {
-    // Bundled snapshot renders immediately (SSR-safe); remote-first refresh
-    // replaces it on mount so installed apps pick up data edits without reinstall.
     const [projects, setProjects] = useState<Project[]>(bundledProjects);
     const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
 
     useEffect(() => {
         let cancelled = false;
-        // Live site first (shared with mobile); fall back to the bundled API so
-        // an offline desktop app still shows its snapshot.
+        // Try live API first; fall back to bundled API.
         fetchProjectsJson(`${LIVE_BASE}/api/projects`)
             .then((live) =>
                 live && live.length > 0 ? live : fetchProjectsJson("/api/projects")

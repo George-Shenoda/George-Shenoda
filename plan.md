@@ -1,60 +1,74 @@
-# Plan: Audit fixes A+B+C + workflow invalid file (audit/fix-a-b-c-workflow)
+# Plan: Remove desktop & mobile apps — web-only portfolio (remove-desktop-mobile)
 
 ## Context
-User approved PASS 1 findings fix in three groups plus workflow check failure:
-`Invalid workflow file .github/workflows/mobile-production-apk.yml (Line 15, Col 9): Unrecognized named-value: 'secrets' at jobs.<job>.if`
-
-Root cause: `secrets` context is not available in `jobs.<job>.if` (GitHub Actions docs: `secrets` only at step/job `env`/`with`, not at job `if` in reusable workflows on some runners). The file used `if: ${{ secrets.EXPO_TOKEN != '' }}` at job level for both jobs, causing parser error.
+User requested removal of all files associated with the desktop (Electron) and mobile (Expo) apps. The portfolio will become a web-only Next.js project. Per AGENTS.md: create branch first, write plan, wait for approval, then execute and open PR. Branch already created.
 
 ## Branch
-`audit/fix-a-b-c-workflow` — commit messages = branch name per AGENTS.md
+`remove-desktop-mobile` — commit messages = branch name per AGENTS.md.
 
-## Group A — Security (may change behavior, intentional)
-1. S-01 `apps/web/lib/mailer.ts:266` — sanitize email with `stripCrlf` before `replyTo`/`to`; also escape `"` in display name (S-11).
-2. S-03 `apps/web/lib/rate-limit.ts` — prune expired entries, cap map size (prevent unbounded Map).
-3. S-04 `apps/web/components/Analytics.tsx:29` — escape `GA_ID` via `JSON.stringify` instead of `'${GA_ID}'`.
-4. S-07 `apps/web/app/api/contact/route.ts:57` — enforce body size after `JSON.parse`, not just `content-length`.
-5. S-02 `apps/web/lib/rate-limit.ts:33` — document trust for `x-forwarded-for`; on Vercel prefer `x-vercel-forwarded-for` or take last entry; add helper to pick client IP safely.
-6. S-05 `apps/desktop/electron/main.mjs:32` — make `filterEnv` actually filter or remove dead code (no behavior change for desktop prod via LIVE_BASE fallback).
-7. S-08/H-05 — add `queuedAt` note / warn on `EMAIL_TO` fallback (minimal).
+## Goal
+Delete every desktop/mobile artefact and scrub remaining web/root configs so the project builds, type-checks, and tests as a pure web monorepo with no dangling refs.
 
-Tests: `npm test` covers mailer/rate-limit; desktop main.mjs has 0 tests — risky, verify manually with `npm run build -w @portfolio/web`.
+## Inventory — files/dirs to delete (verified in repo)
 
-## Group B — Dependencies (patch/minor only, no breaking majors)
-Update via `npm update` / manual bumps (wanted → latest where safe):
-- `expo 57.0.16→57.0.18`, `expo-asset 57.0.14→57.0.15`, `expo-file-system 57.0.5→57.0.6`, `expo-font 57.0.1→57.0.2`, `expo-sharing 57.0.15→57.0.16`
-- `nodemailer 9.0.5→9.0.6`, `lucide-react 1.33→1.38`, `lucide-react-native 1.34→1.38`, `resend 6.22→6.25`
-- `next 16.3.0→16.3.3`, `eslint-config-next 16.3.0→16.3.3`, `@testing-library/react 16.3.2→16.3.3`, `@types/react-dom 19.2.4→19.2.5`
-- Seal lockfile with `npm install` after bumps.
+1. Entire directories:
+   - `apps/desktop/` (electron/main.mjs, preload.cjs, assemble.mjs, release/, node_modules — generated release stays gitignored but top dir is removed)
+   - `apps/mobile/` (app.json, eas.json, expo code in src/, android/, ios generated, dist/, assets, google-services.json, GoogleService-Info.plist, .easignore, etc.)
+2. Root configs:
+   - `electron-builder.yml` (packager config, desktop-only)
+   - `app.json` (root Expo/EAS config — duplicate of mobile, not used by web)
+   - `eas.json` (root EAS config, mobile-only)
+   - `.easignore` (root + mobile copy goes away with apps/mobile)
+   - `ELECTRON.md` (desktop docs)
+   - `certs/` (code-signing PFX gitignored — directory already empty except ignored file; remove dir entry and keep ignore rule cleanup)
+3. Web cross-references:
+   - `apps/web/components/desktop/TitleBar.tsx`
+   - `apps/web/components/desktop/ElectronThemeSync.tsx`
+   - `apps/web/types/electron.d.ts`
+   - `apps/web/app/download/page.tsx` — **KEEP per user request** (do not delete; leave as-is).
+4. Workflows:
+   - `.github/workflows/mobile-production-apk.yml` considered; actual file is `.github/workflows/release.yml` which currently builds desktop+android+ios Matrix; strip to web-only CI or delete mobile/desktop jobs.
 
-**Deferred majors (flag only, no apply):** `electron 33→44`, `electron-builder 25→26.15.3` (fixes critical `tar`), `typescript 7`, `eslint 10`, `@types/node 26`, `@react-native-async-storage 3`, `cross-env 10`, `expo major`. Will list migration notes.
+## Configs to patch (not delete)
 
-## Group C — Safe cleanups (must NOT change behavior)
-- R-02 `apps/web/next.config.ts:8` — migrate `images.domains` → `images.remotePatterns` for `placehold.co`.
-- R-01 delete dead `pendingSubmitRef` in `Contact.tsx:31-32` and `mobile/ContactForm.tsx:51-52`.
-- R-03 `apps/web/app/download/page.tsx:219` — collapse duplicate recommended loop.
-- D-01 extract `LIVE_BASE` to `apps/web/lib/site.ts` and import in `Project.tsx`/`projects.tsx`/`Contact.tsx`.
-- D-02 shared `isValidEmail` in `packages/shared` or `apps/web/lib/sanitize.ts`, reuse in mailer + both Contact forms.
-- D-04 extract `emailLayout` helper in `mailer.ts`.
-- R-06 `apps/mobile/src/components/ContactForm.tsx:212` — fix spinner leak with `cancelAnimation`.
-- H-01/H-02 add `AbortSignal.timeout(8000)` and `cache: 'no-store'` to GitHub API + projects fetch.
-- H-06 workflow env hygiene (use `env:` not `$GITHUB_ENV` for secrets) — low priority, note only.
+- `package.json` (root):
+  - `description` → remove "desktop and mobile apps"
+  - `main` → remove `apps/desktop/electron/main.mjs`
+  - `workspaces` → change from `["apps/*","packages/*"]` to `["apps/web","packages/*"]`
+  - `scripts` → remove `desktop:dev`, `desktop:build`, `desktop:dist`
+  - `allowScripts` / `devDependencies` audit: `png-to-ico`/resvg etc stay if used by web; `cross-env` only for desktop — remove if unused elsewhere.
+- `apps/web/next.config.ts`: remove `...(ELECTRON_BUILD ? {output:"standalone"}:{})` and `allowedDevOrigins` comment if desktop-only.
+- `apps/web/app/layout.tsx`: remove imports + JSX for `TitleBar` and `ElectronThemeSync`.
+- `apps/web/lib/site.ts`: keep `SITE_URL` canonical; drop comment about desktop/Electron fallback.
+- `apps/web/app/api/projects/route.ts`: drop comment about Electron desktop shell.
+- `.gitignore`: remove sections `monorepo: electron release output`, `monorepo: expo/EAS artifacts`, `code signing material`, `expo export output`, `Firebase configs`, `generated native projects` entries tied to desktop/mobile (keep generic ignores).
+- `tsconfig.json`: remove `paths.@mobile/*`.
+- `vitest.config.ts`: remove alias `@mobile`, `include` entries `apps/mobile/src/**` coverage, keep web/shared.
+- `README.md`: rewrite to web-only stack, remove Download table & desktop/mobile highlights.
+- `docs/store-listings.md`: delete or trim (store listings are mobile-only) — delete file if present.
+- `.github/workflows/release.yml`: either delete desktop/android/ios jobs or replace with single web build/deploy job; follow up with user preference — for now strip to web-only publish.
+- `scripts/` audit: `scripts/test-desktop-contact.mjs` → delete; `make-icons.mjs`, `make-project-shots.mjs`, `make-cv-pdf.mjs` are web/shared → keep.
+- `tests/` audit: `tests/unit/mobile/*`, `tests/integration/shared/outbox.test.ts` references mobile, `tests/feature/offline-contact-queue.test.ts` has mobile context — evaluate each file and delete mobile-only suites or strip mobile branches; keep shared/web.
 
-## Workflow fix — mobile-production-apk.yml
-- Remove `jobs.<job>.if: ${{ secrets.EXPO_TOKEN ... }}` (15,65).
-- Replace with step-level gate: add `Check Expo token present` step that sets `output` via `if: true` then `if: steps.check.outputs.has_token == 'true'` for EAS job steps, or make jobs unconditional and early-exit. Simpler: remove job-level if entirely and add `if: ${{ secrets.EXPO_TOKEN != '' }}` at step level + make `bare-production-apk` run only when EAS didn't run via `needs` or via inverse step check.
-- Correct pattern per GitHub docs: keep jobs without `if: secrets`, use `if: ${{ vars.HAS_EXPO_TOKEN }}` is not ideal; simplest robust: remove job `if`, add first step `Check for EXPO_TOKEN` that does `if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then echo "skip=true" >> $GITHUB_OUTPUT; fi` and gate remaining steps with `if: steps.check.outputs.skip != 'true'`. For two jobs, gate each job's steps inversely.
-- Ensure workflow parses: `actionlint` equivalent — `secrets` only in `steps.with`/`env`.
+## Order
 
-## Order & verification
-1. Fix workflow file first (otherwise CI fails on every push).
-2. Group A → `npm run build -w @portfolio/web` + `npm test` → `git commit -m "audit/fix-a-b-c-workflow"` → `git push -u origin audit/fix-a-b-c-workflow`
-3. Group B → same verify → commit+push
-4. Group C → same verify → commit+push
-5. Final PR to `main` via `gh pr create`.
+1. Delete filesystem artefacts (`apps/desktop`, `apps/mobile`, `electron-builder.yml`, root `app.json/eas.json/.easignore`, `ELECTRON.md`, `certs/`, `docs/store-listings.md`, web desktop components; **download page is NOT deleted per user request**).
+2. Patch configs (`package.json`, `next.config.ts`, `layout.tsx`, `electron.d.ts` removal, `.gitignore`, `tsconfig.json`, `vitest.config.ts`, `README.md`, `lib/site.ts`, `api/projects/route.ts`).
+3. Patch workflows + reconcile `package-lock.json` via `npm install` (workspace list changed).
+4. Prune tests referring to mobile/desktop.
+5. Verify: `npm run typecheck -w @portfolio/web`, `npm run build -w @portfolio/web`, `npm test`.
 
 ## Risks
-- Rate-limit helper change is sensitive — Vercel header behavior must be tested (`x-forwarded-for` can contain multiple IPs).
-- Email CRLF fix is safe (additive sanitization).
-- GA escaping safe.
-- Dependency bumps are patch/minor, covered by 116 tests.
+
+- `npm install` will drop `apps/desktop`/`apps/mobile` from lockfile; if CI caches by lockfile hash it will invalidate — expected.
+- Removing `app.json`/`eas.json` root breaks `expo` CLI outside apps/mobile; not needed for web.
+- Old git branches/workflows referencing `apps/desktop/release` will fail — covered by workflow rewrite.
+- `vitest` coverage thresholds may need recalibration after mobile src removal.
+
+## Verification
+
+- `npm run typecheck -w @portfolio/web` passes.
+- `npm run build -w @portfolio/web` produces `.next` without `output: standalone` requirement.
+- `npm test` passes (after mobile suite removal, adjust count).
+- `rg -i "electron|expo|eas|desktop|mobile"` shows no remaining source refs except historical comments if explicitly retained.
+- No git-tracked file under deleted paths (`git ls-files | rg "apps/(desktop|mobile)"` empty).

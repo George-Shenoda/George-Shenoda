@@ -10,13 +10,9 @@ permissions:
   contents: write
 
 jobs:
-  # Desktop builds (Windows .exe setup, macOS dmg, Linux AppImage/deb)
-  desktop:
-    name: Desktop (${{ matrix.os }})
-    strategy:
-      matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
-    runs-on: ${{ matrix.os }}
+  web:
+    name: Web build
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -28,190 +24,31 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build web app (standalone)
+      - name: Build web app
         run: npm run build -w @portfolio/web
         env:
-          ELECTRON_BUILD: 'true'
-          # Baked into the client bundle at build time; absent secrets degrade gracefully.
           GOOGLE_ANALYTICS_ID: ${{ secrets.GOOGLE_ANALYTICS_ID }}
           NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
 
-      - name: Assemble standalone bundle
-        run: npm run assemble -w @portfolio/desktop
-
-      - name: Configure code signing
-        env:
-          WIN_CSC_LINK_SECRET: ${{ secrets.WIN_CSC_LINK }}
-          WIN_CSC_KEY_PASSWORD_SECRET: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
-          CSC_LINK_SECRET: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD_SECRET: ${{ secrets.CSC_KEY_PASSWORD }}
-          APPLE_ID_SECRET: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD_SECRET: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID_SECRET: ${{ secrets.APPLE_TEAM_ID }}
-        shell: bash
-        run: |
-          if [ -n "$WIN_CSC_LINK_SECRET" ]; then echo "WIN_CSC_LINK=$WIN_CSC_LINK_SECRET" >> "$GITHUB_ENV"; fi
-          if [ -n "$WIN_CSC_KEY_PASSWORD_SECRET" ]; then echo "WIN_CSC_KEY_PASSWORD=$WIN_CSC_KEY_PASSWORD_SECRET" >> "$GITHUB_ENV"; fi
-          if [ -n "$CSC_LINK_SECRET" ]; then echo "CSC_LINK=$CSC_LINK_SECRET" >> "$GITHUB_ENV"; fi
-          if [ -n "$CSC_KEY_PASSWORD_SECRET" ]; then echo "CSC_KEY_PASSWORD=$CSC_KEY_PASSWORD_SECRET" >> "$GITHUB_ENV"; fi
-          if [ -n "$APPLE_ID_SECRET" ]; then echo "APPLE_ID=$APPLE_ID_SECRET" >> "$GITHUB_ENV"; fi
-          if [ -n "$APPLE_APP_SPECIFIC_PASSWORD_SECRET" ]; then echo "APPLE_APP_SPECIFIC_PASSWORD=$APPLE_APP_SPECIFIC_PASSWORD_SECRET" >> "$GITHUB_ENV"; fi
-          if [ -n "$APPLE_TEAM_ID_SECRET" ]; then echo "APPLE_TEAM_ID=$APPLE_TEAM_ID_SECRET" >> "$GITHUB_ENV"; fi
-
-      # Matrix jobs never publish directly — parallel uploads to one Release
-      # race on identical asset names (422 already_exists). The gated `release`
-      # job attaches all installer artifacts to the tag's Release instead.
-      - name: Package installers
-        run: npx electron-builder --publish never
-
-      - name: Upload installer artifacts
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: desktop-${{ matrix.os }}
-          path: |
-            apps/desktop/release/*.exe
-            apps/desktop/release/*.dmg
-            apps/desktop/release/*.zip
-            apps/desktop/release/*.AppImage
-            apps/desktop/release/*.deb
+          name: web-build
+          path: apps/web/.next
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 7
 
-  # Android build — real .apk via the `preview` EAS profile (production builds an
-  # app-bundle/.aab for Play Store, not a sideloadable APK).
-  # Skipped unless EXPO_TOKEN secret is set.
-  android:
-    name: Android
-    runs-on: ubuntu-latest
-    env:
-      HAS_EXPO_TOKEN: ${{ secrets.EXPO_TOKEN != '' }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      # NOTE: firebase configs are NOT injected here. `eas build` re-clones the
-      # repo on Expo's servers, so runner-local files never reach the build.
-      # Configs arrive via EAS environment variables consumed by
-      # apps/mobile/scripts/eas-write-firebase-configs.mjs (eas-build-pre-install):
-      #   GOOGLE_SERVICES_JSON_B64 / GOOGLE_SERVICES_PLIST_B64
-      # Set them with `eas env:create` or on the Expo dashboard.
-
-      - name: Setup Expo
-        if: env.HAS_EXPO_TOKEN == 'true'
-        uses: expo/expo-github-action@v8
-        with:
-          expo-version: latest
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Build Android app and download APK
-        if: env.HAS_EXPO_TOKEN == 'true'
-        working-directory: apps/mobile
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: |
-          eas build --platform android --profile preview --non-interactive --wait --json > build.json
-          ARTIFACT_URL=$(node -e "const b=JSON.parse(require('fs').readFileSync('build.json','utf8'));console.log(b[0].artifacts.buildUrl)")
-          echo "Downloading from $ARTIFACT_URL"
-          curl -fL "$ARTIFACT_URL" -o app-release.apk
-          VERSION=$(node -e "console.log(require('./package.json').version)")
-          mv app-release.apk "George-Shenoda-Portfolio-v${VERSION}.apk"
-
-      - name: Upload Android artifact
-        if: env.HAS_EXPO_TOKEN == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-apk
-          path: apps/mobile/George-Shenoda-Portfolio-v*.apk
-          if-no-files-found: error
-          retention-days: 30
-
-  # iOS build — disabled until Apple signing credentials are configured in Expo
-  # (run `eas credentials` locally or add an App Store Connect API key on expo.dev,
-  # then flip ENABLE_IOS to 'true')
-  ios:
-    name: iOS
-    runs-on: macos-latest
-    env:
-      HAS_EXPO_TOKEN: ${{ secrets.EXPO_TOKEN != '' }}
-      ENABLE_IOS: 'false'
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      # iOS config arrives via EAS env var GOOGLE_SERVICES_PLIST_B64
-      # (see the Android job note).
-
-      - name: Setup Expo
-        if: env.HAS_EXPO_TOKEN == 'true' && env.ENABLE_IOS == 'true'
-        uses: expo/expo-github-action@v8
-        with:
-          expo-version: latest
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Build iOS app and download IPA
-        if: env.HAS_EXPO_TOKEN == 'true' && env.ENABLE_IOS == 'true'
-        working-directory: apps/mobile
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: |
-          eas build --platform ios --profile production --non-interactive --wait --json > build.json
-          ARTIFACT_URL=$(node -e "const b=JSON.parse(require('fs').readFileSync('build.json','utf8'));console.log(b[0].artifacts.buildUrl)")
-          echo "Downloading from $ARTIFACT_URL"
-          curl -fL "$ARTIFACT_URL" -o app-release.ipa
-
-      - name: Upload iOS artifact
-        if: env.HAS_EXPO_TOKEN == 'true' && env.ENABLE_IOS == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-ipa
-          path: apps/mobile/app-release.ipa
-          if-no-files-found: error
-          retention-days: 30
-
-  # Attach all setup files to the GitHub Release (tags only)
   release:
     name: Create Release
-    needs: [desktop, android, ios]
+    needs: [web]
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Prepare artifacts directory
-        run: mkdir -p artifacts
-
-      - name: Download all artifacts
-        continue-on-error: true
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-          merge-multiple: true
-
-      - name: List artifacts
-        run: ls -la artifacts/ || true
-
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            artifacts/*
-          fail_on_unmatched_files: false
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

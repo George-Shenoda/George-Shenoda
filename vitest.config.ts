@@ -5,7 +5,6 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "apps/web"),
-      "@mobile": path.resolve(__dirname, "apps/mobile/src"),
     },
   },
   test: {
@@ -16,8 +15,6 @@ export default defineConfig({
         "apps/web/lib/**",
         "apps/web/utils/**",
         "apps/web/app/api/**",
-        "apps/mobile/src/config.ts",
-        "apps/mobile/src/outbox-storage.ts",
       ],
     },
     projects: [

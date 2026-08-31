@@ -4,7 +4,7 @@ import { BackButton } from "@/components/web/BackButton";
 export const metadata: Metadata = {
     title: "Privacy Policy | George Shenoda",
     description:
-        "Privacy policy for George Shenoda's portfolio website and mobile applications.",
+        "Privacy policy for George Shenoda's portfolio website.",
 };
 
 const sectionClass = "max-w-3xl mx-auto px-4 py-16 text-base leading-relaxed";
@@ -23,12 +23,10 @@ export default function PrivacyPolicy() {
 
                 <h2 className={subHeadingClass}>Overview</h2>
                 <p>
-                    This privacy policy covers the portfolio website at this domain
-                    and the associated desktop and mobile applications (collectively,
-                    {/* eslint-disable-next-line react/no-unescaped-entities */}
-                    the "Services"). The Services are designed to be
-                    privacy-friendly: they collect the minimum information necessary
-                    and include no advertising, tracking, or analytics.
+                    This privacy policy covers the portfolio website at this domain.
+                    The website is designed to be privacy-friendly: it collects the
+                    minimum information necessary and includes no advertising,
+                    tracking, or analytics.
                 </p>
 
                 <h2 className={subHeadingClass}>Information Collected</h2>
@@ -50,9 +48,8 @@ export default function PrivacyPolicy() {
 
                 <h2 className={subHeadingClass}>Tracking & Analytics</h2>
                 <p>
-                    The Services contain no analytics, telemetry, cookies for
-                    tracking, advertising identifiers, or third-party trackers of any
-                    kind.
+                    The website contains no analytics, telemetry, cookies for
+                    tracking, advertising identifiers, or third-party trackers.
                 </p>
 
                 <h2 className={subHeadingClass}>Third-Party Processors</h2>
@@ -69,7 +66,7 @@ export default function PrivacyPolicy() {
 
                 <h2 className={subHeadingClass}>Children&apos;s Privacy</h2>
                 <p>
-                    The Services are not directed at children under 13, and no
+                    The website is not directed at children under 13, and no
                     information is knowingly collected from them.
                 </p>
 

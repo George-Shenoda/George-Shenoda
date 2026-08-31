@@ -13,7 +13,6 @@
     "forceConsistentCasingInFileNames": true,
     "paths": {
       "@/*": ["./apps/web/*"],
-      "@mobile/*": ["./apps/mobile/src/*"],
       "@portfolio/shared": ["./packages/shared/src/index.ts"]
     }
   },

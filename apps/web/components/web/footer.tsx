@@ -1,7 +1,4 @@
-'use client';
-
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 
 const ALL_FOOTER_LINKS = [
     { href: "#workflow", label: "Workflow" },
@@ -12,12 +9,7 @@ const ALL_FOOTER_LINKS = [
 ] as const;
 
 function Footer() {
-    const [isDesktop, setIsDesktop] = useState(false);
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time desktop detection
-        setIsDesktop(Boolean((window as unknown as { electronAPI?: { isDesktop?: boolean } }).electronAPI?.isDesktop));
-    }, []);
-    const links = isDesktop ? ALL_FOOTER_LINKS.filter(({ href }) => href !== "/download") : ALL_FOOTER_LINKS;
+    const links = ALL_FOOTER_LINKS;
 
     return (
         <footer className="flex flex-col sm:flex-row justify-between items-center gap-4 w-full px-8 py-8 dark:bg-[#151d1d] bg-[#eee]">
