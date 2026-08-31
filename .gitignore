@@ -40,30 +40,5 @@ pnpm-debug.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# monorepo: electron release output
-release/
-
-# monorepo: expo / EAS artifacts
-apps/mobile/.expo
-.eas/
-eas-debug.log
-eas-json-schema.json
-
 # security scan artifacts
 strix_runs/
-
-# code signing material (never commit)
-certs/
-*.pfx
-*.p12
-
-# expo export output
-apps/mobile/dist
-
-# Firebase configs (injected via CI secret GOOGLE_SERVICES_JSON_B64; never commit)
-apps/mobile/google-services.json
-**/GoogleService-Info.plist
-
-# generated native projects (expo prebuild output)
-apps/mobile/android/
-apps/mobile/ios/

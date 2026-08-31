@@ -2,11 +2,10 @@
   "name": "my_portfolio",
   "version": "0.1.0",
   "private": true,
-  "description": "George Shenoda portfolio — website, desktop and mobile apps",
+  "description": "George Shenoda portfolio — website",
   "author": "George Shenoda <general@email.com>",
-  "main": "apps/desktop/electron/main.mjs",
   "workspaces": [
-    "apps/*",
+    "apps/web",
     "packages/*"
   ],
   "scripts": {
@@ -18,9 +17,6 @@
     "icons": "node scripts/make-icons.mjs",
     "shots": "node scripts/make-project-shots.mjs",
     "cv:pdf": "node scripts/make-cv-pdf.mjs",
-    "desktop:dev": "npm run dev -w @portfolio/desktop",
-    "desktop:build": "cross-env ELECTRON_BUILD=true npm run build -w @portfolio/web && npm run assemble -w @portfolio/desktop",
-    "desktop:dist": "npm run desktop:build && electron-builder",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -34,9 +30,5 @@
     "png-to-ico": "^3.0.2",
     "pngjs": "^7.0.0",
     "vitest": "^4.1.11"
-  },
-  "allowScripts": {
-    "@react-native-firebase/app": true,
-    "@react-native-firebase/analytics": true
   }
 }
