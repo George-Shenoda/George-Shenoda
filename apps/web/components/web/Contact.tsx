@@ -11,9 +11,8 @@ import {
 } from '@portfolio/shared';
 import { CheckCircle2, AlertCircle, Loader2, MailWarning } from 'lucide-react';
 import Reveal from './Reveal';
+import { LIVE_BASE } from '@/lib/site';
 
-const PRODUCTION_URL = 'https://george-shenoda.vercel.app';
-const LIVE_BASE = (process.env.NEXT_PUBLIC_SITE_URL?.trim() || PRODUCTION_URL).replace(/\/$/, '');
 const OUTBOX_KEY = 'portfolio-contact-outbox';
 const COOLDOWN_MS = 5_000;
 
@@ -29,7 +28,6 @@ export default function Contact() {
   const [queuedCount, setQueuedCount] = useState(0);
   const [cooldownUntil, setCooldownUntil] = useState<number>(0);
   const outboxRef = useRef<Outbox | null>(null);
-  const pendingSubmitRef = useRef<{ formData: typeof formData; resolve: (value: void) => void } | null>(null);
 
   const isDesktop =
     typeof window !== 'undefined' && window.electronAPI?.isDesktop === true;
@@ -112,11 +110,7 @@ export default function Contact() {
       setErrorMessage('');
 
       await new Promise<void>((resolve) => {
-        pendingSubmitRef.current = { formData, resolve };
-        setTimeout(() => {
-          pendingSubmitRef.current = null;
-          resolve();
-        }, remainingMs);
+        setTimeout(resolve, remainingMs);
       });
 
       // After waiting, execute the submit

@@ -10,13 +10,14 @@ import {
 import NetInfo from '@react-native-community/netinfo';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
+  cancelAnimation,
   Easing,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { createOutbox, submitContact, type Outbox } from '@portfolio/shared';
+import { createOutbox, isValidEmail, submitContact, type Outbox } from '@portfolio/shared';
 import {
   AlertCircle,
   CheckCircle2,
@@ -31,8 +32,6 @@ import { usePalette } from '../theme-mode';
 
 const OUTBOX_KEY = 'portfolio-contact-outbox';
 const COOLDOWN_MS = 5_000;
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type Status = 'idle' | 'loading' | 'success' | 'error' | 'queued';
 
@@ -49,7 +48,6 @@ function ContactForm() {
   const [cooldownUntil, setCooldownUntil] = useState(0);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const outboxRef = useRef<Outbox | null>(null);
-  const pendingSubmitRef = useRef<{ formData: { name: string; email: string; message: string; website: string }; resolve: (value: void) => void } | null>(null);
 
   const outbox = useMemo(
     () =>
@@ -148,12 +146,8 @@ function ContactForm() {
       setStatus('loading');
       setErrorMessage('');
 
-      await new Promise((resolve) => {
-        pendingSubmitRef.current = { formData: { name, email, message, website }, resolve };
-        setTimeout(() => {
-          pendingSubmitRef.current = null;
-          resolve();
-        }, remainingMs);
+      await new Promise<void>((resolve) => {
+        setTimeout(() => resolve(), remainingMs);
       });
 
       // After waiting, execute the submit
@@ -168,7 +162,7 @@ function ContactForm() {
       return;
     }
 
-    if (!EMAIL_REGEX.test(email.trim())) {
+    if (!isValidEmail(email)) {
       setStatus('error');
       setErrorMessage('Please enter a valid email address.');
       return;
@@ -215,6 +209,9 @@ function ContactForm() {
       spinnerRotation.set(
         withRepeat(withTiming(360, { duration: 800, easing: Easing.linear }), -1, false)
       );
+    } else {
+      cancelAnimation(spinnerRotation);
+      spinnerRotation.set(0);
     }
   }, [status, spinnerRotation]);
   const spinnerStyle = useAnimatedStyle(() => ({

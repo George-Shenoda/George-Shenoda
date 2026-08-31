@@ -5,21 +5,14 @@ import { projects as bundledProjects, type Project } from "@portfolio/shared";
 import ProjectCard from "./Project";
 import Reveal from "./Reveal";
 import { Button } from "@/components/ui/button";
+import { LIVE_BASE } from "@/lib/site";
 
 const INITIAL_COUNT = 6;
 const LOAD_STEP = 6;
 
-/**
- * Site origin baked at build time. Falls back to production so a desktop build
- * without a local .env still reaches the live site (fixes blank after push).
- */
-const LIVE_BASE = (
-  process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://george-shenoda.vercel.app"
-).replace(/\/$/, "");
-
 async function fetchProjectsJson(url: string): Promise<Project[] | null> {
     try {
-        const res = await fetch(url, { cache: "no-store" });
+        const res = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(8000) });
         if (!res.ok) return null;
         return await res.json();
     } catch {

@@ -3,12 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
-
-// Baked at build time. Falls back to production URL so desktop builds without
-// a local .env still OTA-load live assets (fixes blank after `git push` without rebuild).
-const LIVE_BASE = (
-  process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://george-shenoda.vercel.app"
-).replace(/\/$/, "");
+import { LIVE_BASE } from "@/lib/site";
 
 interface ProjectProps {
     title: string;

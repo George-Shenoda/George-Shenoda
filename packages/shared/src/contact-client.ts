@@ -12,6 +12,10 @@ export type ContactResult = {
   networkError?: boolean;
 };
 
+export function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
 export async function submitContact(
   baseUrl: string,
   payload: ContactPayload
