@@ -5,8 +5,16 @@ import http from 'node:http';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import dotenv from 'dotenv';
+import { createRequire } from 'node:module';
 import { autoUpdater } from 'electron-updater';
+
+const require = createRequire(import.meta.url);
+let dotenv;
+try {
+  dotenv = require('dotenv');
+} catch {
+  dotenv = null;
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DESKTOP_DIR = path.resolve(__dirname, '..');
@@ -25,9 +33,11 @@ const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
 // Load .env for desktop so EMAIL_USER/EMAIL_PASS (and NEXT_PUBLIC_SITE_URL) are
 // available when running from the installed app or `desktop:dev` without global env.
-// Best-effort: missing file is fine (remote LIVE_BASE fallback handles SMTP).
-for (const p of [path.join(WEB_DIR, '.env'), path.join(REPO_ROOT, '.env')]) {
-  if (fs.existsSync(p)) dotenv.config({ path: p, override: false });
+// Best-effort: missing file or missing dotenv is fine (remote LIVE_BASE fallback handles SMTP).
+if (dotenv) {
+  for (const p of [path.join(WEB_DIR, '.env'), path.join(REPO_ROOT, '.env')]) {
+    if (fs.existsSync(p)) dotenv.config({ path: p, override: false });
+  }
 }
 
 const SENSITIVE_ENV_VARS = [
