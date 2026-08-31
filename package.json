@@ -2,10 +2,11 @@
   "name": "my_portfolio",
   "version": "0.1.0",
   "private": true,
-  "description": "George Shenoda portfolio — website",
+  "description": "George Shenoda portfolio — website and desktop app",
   "author": "George Shenoda <general@email.com>",
+  "main": "apps/desktop/electron/main.mjs",
   "workspaces": [
-    "apps/web",
+    "apps/*",
     "packages/*"
   ],
   "scripts": {
@@ -17,6 +18,9 @@
     "icons": "node scripts/make-icons.mjs",
     "shots": "node scripts/make-project-shots.mjs",
     "cv:pdf": "node scripts/make-cv-pdf.mjs",
+    "desktop:dev": "npm run dev -w @portfolio/desktop",
+    "desktop:build": "cross-env ELECTRON_BUILD=true npm run build -w @portfolio/web && npm run assemble -w @portfolio/desktop",
+    "desktop:dist": "npm run desktop:build && electron-builder",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

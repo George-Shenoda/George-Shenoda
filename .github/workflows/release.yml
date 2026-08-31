@@ -10,6 +10,79 @@ permissions:
   contents: write
 
 jobs:
+  # Desktop builds (Windows .exe setup, macOS dmg, Linux AppImage/deb) with auto-update support
+  desktop:
+    name: Desktop (${{ matrix.os }})
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web app (standalone)
+        run: npm run build -w @portfolio/web
+        env:
+          ELECTRON_BUILD: 'true'
+          GOOGLE_ANALYTICS_ID: ${{ secrets.GOOGLE_ANALYTICS_ID }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+
+      - name: Assemble standalone bundle
+        run: npm run assemble -w @portfolio/desktop
+
+      - name: Configure code signing
+        env:
+          WIN_CSC_LINK_SECRET: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD_SECRET: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          CSC_LINK_SECRET: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD_SECRET: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID_SECRET: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD_SECRET: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID_SECRET: ${{ secrets.APPLE_TEAM_ID }}
+        shell: bash
+        run: |
+          if [ -n "$WIN_CSC_LINK_SECRET" ]; then echo "WIN_CSC_LINK=$WIN_CSC_LINK_SECRET" >> "$GITHUB_ENV"; fi
+          if [ -n "$WIN_CSC_KEY_PASSWORD_SECRET" ]; then echo "WIN_CSC_KEY_PASSWORD=$WIN_CSC_KEY_PASSWORD_SECRET" >> "$GITHUB_ENV"; fi
+          if [ -n "$CSC_LINK_SECRET" ]; then echo "CSC_LINK=$CSC_LINK_SECRET" >> "$GITHUB_ENV"; fi
+          if [ -n "$CSC_KEY_PASSWORD_SECRET" ]; then echo "CSC_KEY_PASSWORD=$CSC_KEY_PASSWORD_SECRET" >> "$GITHUB_ENV"; fi
+          if [ -n "$APPLE_ID_SECRET" ]; then echo "APPLE_ID=$APPLE_ID_SECRET" >> "$GITHUB_ENV"; fi
+          if [ -n "$APPLE_APP_SPECIFIC_PASSWORD_SECRET" ]; then echo "APPLE_APP_SPECIFIC_PASSWORD=$APPLE_APP_SPECIFIC_PASSWORD_SECRET" >> "$GITHUB_ENV"; fi
+          if [ -n "$APPLE_TEAM_ID_SECRET" ]; then echo "APPLE_TEAM_ID=$APPLE_TEAM_ID_SECRET" >> "$GITHUB_ENV"; fi
+
+      # On tags, publish to GitHub Releases — generates latest.yml / blockmaps for electron-updater
+      - name: Package installers (publish)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --publish always
+
+      - name: Package installers (no publish)
+        if: "!startsWith(github.ref, 'refs/tags/v')"
+        run: npx electron-builder --publish never
+
+      - name: Upload installer artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.os }}
+          path: |
+            apps/desktop/release/*.exe
+            apps/desktop/release/*.dmg
+            apps/desktop/release/*.zip
+            apps/desktop/release/*.AppImage
+            apps/desktop/release/*.deb
+            apps/desktop/release/*.yml
+            apps/desktop/release/*.blockmap
+          if-no-files-found: error
+          retention-days: 30
+
   web:
     name: Web build
     runs-on: ubuntu-latest
@@ -30,25 +103,34 @@ jobs:
           GOOGLE_ANALYTICS_ID: ${{ secrets.GOOGLE_ANALYTICS_ID }}
           NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: web-build
-          path: apps/web/.next
-          if-no-files-found: error
-          retention-days: 7
-
+  # Attach all installers to the GitHub Release (tags only) — fallback if desktop jobs used --publish never
   release:
     name: Create Release
-    needs: [web]
+    needs: [desktop, web]
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
+      - name: Prepare artifacts directory
+        run: mkdir -p artifacts
+
+      - name: Download all artifacts
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: List artifacts
+        run: ls -la artifacts/ || true
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
+          files: |
+            artifacts/*
+          fail_on_unmatched_files: false
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

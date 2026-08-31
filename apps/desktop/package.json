@@ -1,0 +1,21 @@
+{
+  "name": "@portfolio/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "George Shenoda portfolio — Electron desktop shell",
+  "main": "electron/main.mjs",
+  "scripts": {
+    "dev": "electron electron/main.mjs",
+    "assemble": "node electron/assemble.mjs",
+    "icons": "node ../../scripts/make-icons.mjs"
+  },
+  "dependencies": {
+    "electron-updater": "^6.6.2"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.4.5",
+    "electron": "33.4.11",
+    "electron-builder": "^25.0.0"
+  }
+}

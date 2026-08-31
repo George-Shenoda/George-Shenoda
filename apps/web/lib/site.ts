@@ -2,6 +2,7 @@ export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL?.trim() || "http://localhost:3000"
 ).replace(/\/$/, "");
 
+// Production fallback for desktop/Electron OTA — ensures bundled desktop without local .env still hits live Vercel
 export const LIVE_BASE = (
   process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://george-shenoda.vercel.app"
 ).replace(/\/$/, "");
