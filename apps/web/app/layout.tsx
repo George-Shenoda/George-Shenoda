@@ -5,9 +5,11 @@ import { cn } from "@/lib/utils";
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
 import Navbar from "@/components/web/navbar";
 import Analytics from "@/components/Analytics";
+import TitleBar from "@/components/desktop/TitleBar";
+import ElectronThemeSync from "@/components/desktop/ElectronThemeSync";
 import { ThemeProvider } from "next-themes";
 
-// Self-hosted at build time (zero runtime font requests).
+// Self-hosted at build time (zero runtime font requests — required for the offline desktop app).
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-jakarta" });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains" });
 
@@ -70,6 +72,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                     defaultTheme="system" 
                     enableSystem
                 >
+                    <TitleBar />
+                    <ElectronThemeSync />
                     <Analytics />
                     <Navbar />
                     {children}

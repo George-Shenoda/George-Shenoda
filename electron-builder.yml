@@ -1,0 +1,35 @@
+appId: com.georgeshenoda.portfolio
+productName: George Shenoda
+directories:
+  output: apps/desktop/release
+files:
+  - apps/desktop/electron/**/*
+  - apps/desktop/package.json
+extraResources:
+  - from: apps/web/.next/standalone
+    to: standalone
+publish:
+  provider: github
+  owner: George-Shenoda
+  repo: George-Shenoda
+generateUpdatesFilesForAllChannels: true
+win:
+  icon: assets/icons/icon.ico
+  target:
+    - nsis
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+mac:
+  icon: assets/icons/icon.png
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+linux:
+  icon: assets/icons/icon.png
+  target:
+    - deb
+  category: Development
+npmRebuild: false

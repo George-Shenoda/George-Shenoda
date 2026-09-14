@@ -40,5 +40,13 @@ pnpm-debug.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# monorepo: electron release output
+release/
+
 # security scan artifacts
 strix_runs/
+
+# code signing material (never commit)
+certs/
+*.pfx
+*.p12

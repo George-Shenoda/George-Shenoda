@@ -1,11 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '../ui/button';
 import { sendContactEmail } from '@/app/actions/contact';
-import { CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import {
+  createLocalStorageStorage,
+  createOutbox,
+  submitContact,
+  type Outbox,
+} from '@portfolio/shared';
+import { CheckCircle2, AlertCircle, Loader2, MailWarning } from 'lucide-react';
 import Reveal from './Reveal';
+import { LIVE_BASE } from '@/lib/site';
 
+const OUTBOX_KEY = 'portfolio-contact-outbox';
 const COOLDOWN_MS = 5_000;
 
 export default function Contact() {
@@ -15,16 +23,46 @@ export default function Contact() {
     message: '',
     website: '',
   });
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error' | 'queued'>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [queuedCount, setQueuedCount] = useState(0);
   const [cooldownUntil, setCooldownUntil] = useState<number>(0);
+  const outboxRef = useRef<Outbox | null>(null);
+
+  const isDesktop =
+    typeof window !== 'undefined' && window.electronAPI?.isDesktop === true;
+
+  // Desktop only: keep an offline outbox and flush it on reconnect/launch.
+  // Uses LIVE_BASE (production) so the bundled desktop doesn't need local SMTP creds
+  // — avoids "Email service is not configured" when .env is missing on the user's machine.
+  useEffect(() => {
+    if (!isDesktop) return;
+    const outbox = createOutbox({
+      storage: createLocalStorageStorage(OUTBOX_KEY),
+      submit: (payload) => submitContact(LIVE_BASE, payload),
+    });
+    outboxRef.current = outbox;
+
+    const flush = async () => {
+      try {
+        const result = await outbox.flush();
+        setQueuedCount(result.remaining.length);
+      } catch {
+        // storage unavailable — leave the queue untouched
+      }
+    };
+
+    flush();
+    window.addEventListener('online', flush);
+    return () => window.removeEventListener('online', flush);
+  }, [isDesktop]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
     }));
-    if (status === 'error') {
+    if (status === 'error' || status === 'queued') {
       setStatus('idle');
       setErrorMessage('');
     }
@@ -32,12 +70,22 @@ export default function Contact() {
 
   const executeSubmit = async (submitFormData: typeof formData) => {
     try {
-      const result = await sendContactEmail(submitFormData);
+      const result =
+        window.electronAPI?.isDesktop === true
+          ? // Desktop: hit production API (has SMTP creds) — local standalone would need bundled secrets
+            await submitContact(LIVE_BASE, submitFormData)
+          : await sendContactEmail(submitFormData);
 
       if (result.success) {
         setStatus('success');
         const until = Date.now() + COOLDOWN_MS;
         setCooldownUntil(until);
+        setFormData({ name: '', email: '', message: '', website: '' });
+      } else if (result.networkError && outboxRef.current) {
+        // Offline: queue locally and auto-send when connectivity returns.
+        await outboxRef.current.add(submitFormData);
+        setQueuedCount(await outboxRef.current.pendingCount());
+        setStatus('queued');
         setFormData({ name: '', email: '', message: '', website: '' });
       } else {
         setStatus('error');
@@ -112,6 +160,16 @@ export default function Contact() {
               <div className="flex items-center gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium animate-in fade-in duration-200">
                 <AlertCircle className="size-5 shrink-0" />
                 <span>{errorMessage}</span>
+              </div>
+            )}
+            {(status === 'queued' || (queuedCount > 0 && status === 'idle')) && (
+              <div className="flex items-center gap-3 p-4 mb-2 rounded-xl bg-primary/10 border border-primary/25 text-primary text-sm font-medium animate-in fade-in duration-200">
+                <MailWarning className="size-5 shrink-0" />
+                <span>
+                  {status === 'queued'
+                    ? 'You are offline — your message was saved and will send automatically once you reconnect.'
+                    : `${queuedCount} saved message${queuedCount === 1 ? '' : 's'} will send automatically once you are back online.`}
+                </span>
               </div>
             )}
             </div>

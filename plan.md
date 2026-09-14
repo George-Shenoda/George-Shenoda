@@ -1,74 +1,84 @@
-# Plan: Remove desktop & mobile apps — web-only portfolio (remove-desktop-mobile)
+# Plan: Desktop app — Electron shell for portfolio (feat/desktop-app)
 
 ## Context
-User requested removal of all files associated with the desktop (Electron) and mobile (Expo) apps. The portfolio will become a web-only Next.js project. Per AGENTS.md: create branch first, write plan, wait for approval, then execute and open PR. Branch already created.
+User removed desktop/mobile and now wants a new desktop app, any easy language. Web is `apps/web` (Next.js 16, React 19, monorepo). Per AGENTS.md: branch first, plan, no commit until approved, PR to main. Branch `feat/desktop-app` created.
 
 ## Branch
-`remove-desktop-mobile` — commit messages = branch name per AGENTS.md.
+`feat/desktop-app` — commit messages = branch name per AGENTS.md.
+
+## Chosen stack — Electron (Node + JS)
+**Why Electron:** zero new language/toolchain, reuses existing Next.js build, smallest risk, fastest to ship. Alternatives considered:
+- **Tauri (Rust + WebView)** — lighter binary (~10 MB vs ~150 MB) but requires Rust, slower setup.
+- **Python (PyQt/Tkinter) / C# (WPF)** — native but needs full rewrite of UI, not web-reuse.
+
+If user prefers Tauri/Python/C# we can swap after approval — Electron is the default proposal.
 
 ## Goal
-Delete every desktop/mobile artefact and scrub remaining web/root configs so the project builds, type-checks, and tests as a pure web monorepo with no dangling refs.
+Ship a desktop shell that launches the Next.js portfolio locally (dev) or bundled (prod), with installer artifacts.
 
-## Inventory — files/dirs to delete (verified in repo)
-
-1. Entire directories:
-   - `apps/desktop/` (electron/main.mjs, preload.cjs, assemble.mjs, release/, node_modules — generated release stays gitignored but top dir is removed)
-   - `apps/mobile/` (app.json, eas.json, expo code in src/, android/, ios generated, dist/, assets, google-services.json, GoogleService-Info.plist, .easignore, etc.)
-2. Root configs:
-   - `electron-builder.yml` (packager config, desktop-only)
-   - `app.json` (root Expo/EAS config — duplicate of mobile, not used by web)
-   - `eas.json` (root EAS config, mobile-only)
-   - `.easignore` (root + mobile copy goes away with apps/mobile)
-   - `ELECTRON.md` (desktop docs)
-   - `certs/` (code-signing PFX gitignored — directory already empty except ignored file; remove dir entry and keep ignore rule cleanup)
-3. Web cross-references:
-   - `apps/web/components/desktop/TitleBar.tsx`
-   - `apps/web/components/desktop/ElectronThemeSync.tsx`
+## Deliverables
+1. `apps/desktop/` package:
+   - `apps/desktop/package.json` (`@portfolio/desktop`, electron, electron-builder)
+   - `apps/desktop/electron/main.mjs` — single-instance lock, `net` port probe, `child_process` spawn of Next server (dev: `next dev -p 34567`, prod: `.next/standalone/apps/web/server.js`), `BrowserWindow` with WCO overlay on Windows, `ipcMain` theme sync, navigation guard + `shell.openExternal`
+   - `apps/desktop/electron/preload.cjs` — `contextBridge` → `window.electronAPI { isDesktop, platform, setTheme }`
+   - `apps/desktop/electron/assemble.mjs` — copy `.next/static` + `public/` into standalone for packaging
+2. Root:
+   - `electron-builder.yml` — `appId com.georgeshenoda.portfolio`, `productName`, NSIS (win), DMG+zip (mac), deb/AppImage (linux), `files` + `extraResources` (standalone)
+   - `package.json` — restore `main: apps/desktop/electron/main.mjs`, workspaces `apps/*`, scripts `desktop:dev`, `desktop:build`, `desktop:dist`
+3. Web integration:
+   - `apps/web/next.config.ts` — `...(ELECTRON_BUILD ? {output:"standalone"}:{})`, `allowedDevOrigins`
    - `apps/web/types/electron.d.ts`
-   - `apps/web/app/download/page.tsx` — **KEEP per user request** (do not delete; leave as-is).
-4. Workflows:
-   - `.github/workflows/mobile-production-apk.yml` considered; actual file is `.github/workflows/release.yml` which currently builds desktop+android+ios Matrix; strip to web-only CI or delete mobile/desktop jobs.
+   - `apps/web/components/desktop/TitleBar.tsx` + `ElectronThemeSync.tsx` + `app/layout.tsx` wiring
+   - `apps/web/app/api/projects/route.ts` — CORS + no-store note for Electron
+   - `apps/web/lib/site.ts` — `LIVE_BASE` fallback comment
+4. Web components restore:
+   - `apps/web/components/web/Project.tsx` — OTA remote image path for installed app
+   - `apps/web/components/web/Contact.tsx` — desktop outbox + `submitContact(LIVE_BASE)` path
+   - `apps/web/components/web/navbar.tsx` / `footer.tsx` — `isDesktop` hide download, titlebar offset
+5. Workflows & docs:
+   - `.github/workflows/release.yml` — restore desktop matrix (windows/macos/ubuntu) + package/upload artifacts; keep web build
+   - `ELECTRON.md` — dev/build/release/signing docs
+   - `.gitignore` — electron release, code-sign, etc.
+   - `tsconfig.json` — `@mobile` alias not needed unless mobile returns (keep web only)
+6. Scripts & tests:
+   - `scripts/test-desktop-contact.mjs` (optional smoke), keep `make-icons.mjs` desktop icon comment
 
-## Configs to patch (not delete)
+## Auto-update (requested)
+- **Module:** `electron-updater` (`^6.x`) added to `apps/desktop/package.json` (dependency, not dev).
+- **`electron-builder.yml`:** add `publish.provider: github` (`owner: George-Shenoda`, `repo: George-Shenoda`, `releaseType: draft|release` via env), plus `generateUpdatesFilesForAllChannels: true`.
+- **`apps/desktop/electron/main.mjs`:** import `autoUpdater` from `electron-updater`, configure `autoUpdater.logger`, call `autoUpdater.checkForUpdatesAndNotify()` after `app.whenReady` + window created (prod only, `!isDev`). Handle events: `update-available`, `update-downloaded` (show dialog or silent), `error` (log). Add `ipcMain` handlers `check-for-update` / `install-update` if renderer wants manual trigger.
+- **`apps/desktop/electron/preload.cjs`:** expose `checkForUpdate`, `onUpdateAvailable`, `onUpdateDownloaded` if needed (or keep auto-only).
+- **`apps/web/components/desktop/UpdateBanner.tsx` (new, optional):** small banner using `window.electronAPI` events to show “Update available → Restart”.
+- **Release flow:** `release.yml` desktop job runs `electron-builder --publish always` on tags (needs `GH_TOKEN = secrets.GITHUB_TOKEN`). Generates `latest.yml` / `latest-mac.yml` + blockmaps needed by updater.
+- **Dev smoke:** in dev, `autoUpdater` is no-op (skip `checkForUpdates` when `isDev`).
 
-- `package.json` (root):
-  - `description` → remove "desktop and mobile apps"
-  - `main` → remove `apps/desktop/electron/main.mjs`
-  - `workspaces` → change from `["apps/*","packages/*"]` to `["apps/web","packages/*"]`
-  - `scripts` → remove `desktop:dev`, `desktop:build`, `desktop:dist`
-  - `allowScripts` / `devDependencies` audit: `png-to-ico`/resvg etc stay if used by web; `cross-env` only for desktop — remove if unused elsewhere.
-- `apps/web/next.config.ts`: remove `...(ELECTRON_BUILD ? {output:"standalone"}:{})` and `allowedDevOrigins` comment if desktop-only.
-- `apps/web/app/layout.tsx`: remove imports + JSX for `TitleBar` and `ElectronThemeSync`.
-- `apps/web/lib/site.ts`: keep `SITE_URL` canonical; drop comment about desktop/Electron fallback.
-- `apps/web/app/api/projects/route.ts`: drop comment about Electron desktop shell.
-- `.gitignore`: remove sections `monorepo: electron release output`, `monorepo: expo/EAS artifacts`, `code signing material`, `expo export output`, `Firebase configs`, `generated native projects` entries tied to desktop/mobile (keep generic ignores).
-- `tsconfig.json`: remove `paths.@mobile/*`.
-- `vitest.config.ts`: remove alias `@mobile`, `include` entries `apps/mobile/src/**` coverage, keep web/shared.
-- `README.md`: rewrite to web-only stack, remove Download table & desktop/mobile highlights.
-- `docs/store-listings.md`: delete or trim (store listings are mobile-only) — delete file if present.
-- `.github/workflows/release.yml`: either delete desktop/android/ios jobs or replace with single web build/deploy job; follow up with user preference — for now strip to web-only publish.
-- `scripts/` audit: `scripts/test-desktop-contact.mjs` → delete; `make-icons.mjs`, `make-project-shots.mjs`, `make-cv-pdf.mjs` are web/shared → keep.
-- `tests/` audit: `tests/unit/mobile/*`, `tests/integration/shared/outbox.test.ts` references mobile, `tests/feature/offline-contact-queue.test.ts` has mobile context — evaluate each file and delete mobile-only suites or strip mobile branches; keep shared/web.
+## Out of scope
+- Mobile (Expo) — not restored unless requested.
+- Code signing cert (`certs/…pfx`) — gitignored, user provides `WIN_CSC_LINK`.
 
 ## Order
-
-1. Delete filesystem artefacts (`apps/desktop`, `apps/mobile`, `electron-builder.yml`, root `app.json/eas.json/.easignore`, `ELECTRON.md`, `certs/`, `docs/store-listings.md`, web desktop components; **download page is NOT deleted per user request**).
-2. Patch configs (`package.json`, `next.config.ts`, `layout.tsx`, `electron.d.ts` removal, `.gitignore`, `tsconfig.json`, `vitest.config.ts`, `README.md`, `lib/site.ts`, `api/projects/route.ts`).
-3. Patch workflows + reconcile `package-lock.json` via `npm install` (workspace list changed).
-4. Prune tests referring to mobile/desktop.
-5. Verify: `npm run typecheck -w @portfolio/web`, `npm run build -w @portfolio/web`, `npm test`.
-
-## Risks
-
-- `npm install` will drop `apps/desktop`/`apps/mobile` from lockfile; if CI caches by lockfile hash it will invalidate — expected.
-- Removing `app.json`/`eas.json` root breaks `expo` CLI outside apps/mobile; not needed for web.
-- Old git branches/workflows referencing `apps/desktop/release` will fail — covered by workflow rewrite.
-- `vitest` coverage thresholds may need recalibration after mobile src removal.
+1. Scaffold `apps/desktop` + root configs (`package.json` with `electron-updater`, `electron-builder.yml` with `publish`, `.gitignore`, `tsconfig`).
+2. Add `next.config` standalone toggle + web desktop components/types + layout (+ `UpdateBanner` if needed).
+3. Add `Project/Contact/navbar/footer` desktop branching.
+4. Add updater logic in `main.mjs`/`preload.cjs` (auto-check on app ready, prod-only).
+5. Add `release.yml` (with `--publish always` + `GH_TOKEN`) + `ELECTRON.md` (auto-update section).
+6. Verify: `npm install --package-lock-only`, `npm run typecheck -w @portfolio/web`, `npm test`, `npm run desktop:build` → `apps/desktop/release` + `latest.yml`; manual check `autoUpdater` no-op in dev.
+7. Commit `feat/desktop-app` → push → PR to `main`.
 
 ## Verification
+- `npm run typecheck -w @portfolio/web` passes
+- `npm run build -w @portfolio/web` with `ELECTRON_BUILD=true` produces `.next/standalone`
+- `npm run assemble -w @portfolio/desktop` copies static
+- `npx electron-builder --publish never` produces exe/dmg/deb (smoke on windows)
+- `npx electron-builder --publish always` (dry-run in CI) would emit `latest.yml` for updater — verify file exists after build
+- `rg -r "electronAPI|autoUpdater"` shows integration points
+- Manual prod smoke: launch installed app, check `autoUpdater` log for “checking for update” (no error in dev due to guard)
 
-- `npm run typecheck -w @portfolio/web` passes.
-- `npm run build -w @portfolio/web` produces `.next` without `output: standalone` requirement.
-- `npm test` passes (after mobile suite removal, adjust count).
-- `rg -i "electron|expo|eas|desktop|mobile"` shows no remaining source refs except historical comments if explicitly retained.
-- No git-tracked file under deleted paths (`git ls-files | rg "apps/(desktop|mobile)"` empty).
+## Risks
+- Standalone path `apps/web/.next/standalone` is fragile to Next version — `assemble.mjs` fails fast if missing.
+- `ELECTRON_BUILD=true` changes `next.config` output — must not leak to Vercel (`env` only in `release.yml`).
+- `electron-builder` hoisted `node_modules` pruning — build from repo root only (see ELECTRON.md).
+
+## Options if user wants different language
+- **Tauri:** replace `apps/desktop` with `src-tauri/` + `tauri.conf.json`, Rust needed.
+- **Python/C#:** new top-level `desktop/` with native window loading `http://localhost:3000` — more code, not recommended for first iteration.

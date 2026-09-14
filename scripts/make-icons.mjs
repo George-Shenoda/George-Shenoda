@@ -7,6 +7,7 @@ const ROOT = process.cwd();
 const BRAND = path.join(ROOT, "assets", "brand");
 const DESKTOP_ICONS = path.join(ROOT, "assets", "icons");
 const WEB_APP = path.join(ROOT, "apps", "web", "app");
+const MOBILE_ASSETS = path.join(ROOT, "apps", "mobile", "assets");
 
 const FONT = `font-family="Segoe UI" font-weight="700" letter-spacing="-16" text-anchor="middle"`;
 
@@ -98,5 +99,13 @@ await writeFile(
 console.log("wrote apps/web/app/favicon.ico (16/32/48)");
 await writePng(master, path.join(WEB_APP, "icon.png"), 512);
 await writePng(master, path.join(WEB_APP, "apple-icon.png"), 180);
+
+// Mobile (Expo)
+await writePng(master, path.join(MOBILE_ASSETS, "icon.png"), 1024);
+await writePng(fg, path.join(MOBILE_ASSETS, "android-icon-foreground.png"), 1024);
+await writePng(master, path.join(MOBILE_ASSETS, "android-icon-background.png"), 1024);
+await writePng(mono, path.join(MOBILE_ASSETS, "android-icon-monochrome.png"), 1024);
+await writePng(fg, path.join(MOBILE_ASSETS, "splash-icon.png"), 512);
+await writePng(master, path.join(MOBILE_ASSETS, "favicon.png"), 48);
 
 console.log("done");

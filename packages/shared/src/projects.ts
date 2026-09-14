@@ -42,6 +42,13 @@ const projects: Project[] = [
     link: "https://gstack-client-portal.vercel.app",
     image: "/assets/projects/gstack-portal.png",
   },
+  {
+    id: "shenodev-landing-page",
+    title: "ShenoDev Landing Page",
+    techstack: ["Next.js", "Resend", "Tailwind CSS", "Node.js", "MongoDB"],
+    link: "https://shenodev.tech",
+    image: "/assets/projects/shenodev.png",
+  },
 ];
 
 export { projects };
