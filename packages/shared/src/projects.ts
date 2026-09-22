@@ -49,6 +49,13 @@ const projects: Project[] = [
     link: "https://shenodev.tech",
     image: "/assets/projects/shenodev.png",
   },
+  {
+    id: "tony-visuals",
+    title: "Tony Visuals: Cinematic Portfolio & CMS",
+    techstack: ["Next.js", "Resend", "Tailwind CSS", "Node.js", "MongoDB"],
+    link: "https://tony-visuals-portfolio.vercel.app",
+    image: "/assets/projects/tony-visuals.png",
+  }
 ];
 
 export { projects };
