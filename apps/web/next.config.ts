@@ -16,6 +16,12 @@ const nextConfig: NextConfig = {
           { key: "Vary", value: "Origin" },
         ],
       },
+      {
+        source: "/admin/:panel",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
+      },
     ];
   },
 };
