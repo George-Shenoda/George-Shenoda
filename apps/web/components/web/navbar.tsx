@@ -25,19 +25,6 @@ function Navbar() {
     const [activeSection, setActiveSection] = useState<string>("");
     const [scrolled, setScrolled] = useState(false);
     const [progress, setProgress] = useState(0);
-    const [isDesktop, setIsDesktop] = useState(false);
-    const [titlebarHeight, setTitlebarHeight] = useState(0);
-
-    // Detect desktop mode once on mount
-    useEffect(() => {
-        const desktop = window.electronAPI?.isDesktop === true;
-        if (desktop) {
-            const height = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--titlebar-height')) || 40;
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setTitlebarHeight(height);
-        }
-        setIsDesktop(desktop);
-    }, []);
 
     useEffect(() => {
         const update = () => {
@@ -75,14 +62,11 @@ function Navbar() {
         };
     }, [ALL_NAV_LINKS]);
 
-    const topOffset = isDesktop ? titlebarHeight : 0;
-
     return (
         <header
-            className={`sticky transition-shadow duration-300 z-50 ${
+            className={`sticky top-0 transition-shadow duration-300 z-50 ${
                 scrolled ? "shadow-md shadow-black/5 dark:shadow-black/30" : ""
             } dark:bg-[#151d1dee] bg-[#eeeeeef2] backdrop-blur-md`}
-            style={{ top: topOffset }}
         >
             <div className="px-4 py-4 sm:py-5 flex justify-between items-center">
                 <button
@@ -118,16 +102,14 @@ function Navbar() {
                 </nav>
                 <div className="flex items-center gap-2">
                     <ThemeSwitcher />
-                    {!isDesktop && (
-                        <Button
-                            render={<Link href="/download" />}
-                            variant="ghost"
-                            className="hidden h-11 rounded-full px-4 text-[15px] font-medium text-foreground/80 hover:text-primary sm:inline-flex"
-                            nativeButton={false}
-                        >
-                            Download
-                        </Button>
-                    )}
+                    <Button
+                        render={<Link href="/download" />}
+                        variant="ghost"
+                        className="hidden h-11 rounded-full px-4 text-[15px] font-medium text-foreground/80 hover:text-primary sm:inline-flex"
+                        nativeButton={false}
+                    >
+                        Download
+                    </Button>
                     <Button
                         variant="ghost"
                         className="hidden h-11 rounded-full px-4 text-[15px] font-medium text-foreground/80 hover:text-primary sm:inline-flex"

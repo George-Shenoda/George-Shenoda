@@ -4,16 +4,14 @@ import { Resvg } from "@resvg/resvg-js";
 
 /**
  * Generates 1280x720 branded project card images into
- * apps/web/public/assets/projects/ and copies them to
- * apps/mobile/assets/projects/ for offline bundling.
+ * apps/web/public/assets/projects/.
  *
  * Drop real screenshots over the generated PNGs (same filenames)
- * whenever they become available, then re-run to refresh mobile copies.
+ * whenever they become available.
  */
 
 const ROOT = process.cwd();
 const WEB_DIR = path.join(ROOT, "apps", "web", "public", "assets", "projects");
-const MOBILE_DIR = path.join(ROOT, "apps", "mobile", "assets", "projects");
 
 const W = 1280;
 const H = 720;
@@ -71,7 +69,7 @@ function shotSvg(id, title) {
 `;
 }
 
-await Promise.all([mkdir(WEB_DIR, { recursive: true }), mkdir(MOBILE_DIR, { recursive: true })]);
+await mkdir(WEB_DIR, { recursive: true });
 
 for (const project of projects) {
   const png = new Resvg(shotSvg(project.id, project.title), {
@@ -81,8 +79,7 @@ for (const project of projects) {
     .render()
     .asPng();
   await writeFile(path.join(WEB_DIR, `${project.id}.png`), png);
-  await writeFile(path.join(MOBILE_DIR, `${project.id}.png`), png);
-  console.log(`wrote ${project.id}.png (${W}x${H}) web + mobile`);
+  console.log(`wrote ${project.id}.png (${W}x${H})`);
 }
 
 console.log("done");

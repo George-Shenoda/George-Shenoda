@@ -8,12 +8,10 @@ const MAX_MESSAGE_LENGTH = 5000;
 
 function isAllowedOrigin(origin: string | null): boolean {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
-  if (!origin || origin === 'null') return true; // Electron (file:// or local server)
+  if (!origin) return false;
   if (origin === siteUrl) return true;
-  // Allow any localhost / 127.0.0.1 port (Electron dev + prod)
+  // Allow any localhost / 127.0.0.1 port (web dev)
   if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return true;
-  // Mobile app origins (Capacitor, Expo web)
-  if (origin === 'capacitor://localhost' || origin === 'http://localhost') return true;
   return false;
 }
 

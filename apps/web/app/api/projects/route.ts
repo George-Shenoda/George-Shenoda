@@ -1,9 +1,9 @@
-import { projects } from "@portfolio/shared";
+import { readProjects } from "@/lib/admin/store";
 
 export async function GET() {
-  // ACAO * — public read-only data; the Electron desktop shell loads this
-  // cross-origin from its http://127.0.0.1:<port> window.
-  // no-store ensures desktop fetch current list without Vercel/CDN edge caching; images themselves remain cacheable.
+  // Public read-only data — Redis store (seeded from bundled projects),
+  // falls back to the bundled list when Redis is unavailable.
+  const projects = await readProjects();
   return Response.json(projects, {
     headers: {
       "Access-Control-Allow-Origin": "*",
