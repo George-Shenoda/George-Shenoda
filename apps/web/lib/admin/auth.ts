@@ -48,7 +48,7 @@ export async function sessionValid(
 ): Promise<boolean> {
   if (!token) return false;
   try {
-    return (await client.get(sessionKey(token))) === "1";
+    return Boolean(await client.get(sessionKey(token)));
   } catch {
     return false;
   }
